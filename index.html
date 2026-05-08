@@ -1,0 +1,1339 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Digital ICRA PPI Integrated</title>
+    
+    <script src="https://cdn.tailwindcss.com?plugins=typography"></script>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js" integrity="sha512-GsLlZN/3F2ErC5ifS5QtgpiJtWd43JWSuIgh7mbzZ8zBps+dvLusV+eNQATqgA/HdeKFVgA5v3S/cIrLF7QnIg==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+        body { font-family: 'Inter', sans-serif; background-color: #f8fafc; }
+        
+        .tab-active { border-bottom: 4px solid #f59e0b; color: #b45309; font-weight: 700; }
+        .tab-inactive { border-bottom: 4px solid transparent; color: #64748b; }
+        .tab-inactive:hover { color: #334155; border-bottom: 4px solid #e2e8f0; }
+        
+        .radio-card input:checked + div {
+            border-color: #f59e0b; background-color: #fffbeb;
+            box-shadow: 0 4px 6px -1px rgba(245, 158, 11, 0.1);
+        }
+        .radio-card input:checked + div .radio-icon { color: #d97706; }
+        
+        /* ContentEditable Placeholder */
+        [contenteditable]:empty:before { content: attr(data-placeholder); color: #94a3b8; font-style: italic; }
+
+        @media print {
+            body { background-color: white !important; }
+            .no-print { display: none !important; }
+            .print-shadow-none { box-shadow: none !important; border: 1px solid #e2e8f0 !important; }
+            .print-break-avoid { break-inside: avoid; }
+            #tab-penjelasan { display: none !important; }
+        }
+
+        /* AI Loading Animation */
+        .dot-flashing {
+            position: relative; width: 6px; height: 6px; border-radius: 5px; background-color: #d97706; color: #d97706; animation: dot-flashing 1s infinite linear alternate; animation-delay: .5s;
+        }
+        .dot-flashing::before, .dot-flashing::after {
+            content: ''; display: inline-block; position: absolute; top: 0;
+        }
+        .dot-flashing::before { left: -10px; width: 6px; height: 6px; border-radius: 5px; background-color: #d97706; color: #d97706; animation: dot-flashing 1s infinite linear alternate; animation-delay: 0s; }
+        .dot-flashing::after { left: 10px; width: 6px; height: 6px; border-radius: 5px; background-color: #d97706; color: #d97706; animation: dot-flashing 1s infinite linear alternate; animation-delay: 1s; }
+        @keyframes dot-flashing { 0% { background-color: #d97706; } 50%, 100% { background-color: #ebe6ff; } }
+        
+        .ai-suggested { animation: pulse-amber 1.5s ease-in-out; }
+        @keyframes pulse-amber { 0%, 100% { background-color: white; } 50% { background-color: #fef3c7; } }
+    </style>
+</head>
+<body class="text-slate-800 antialiased pb-20">
+
+    <header class="bg-slate-900 text-white py-8 px-4 shadow-md print-shadow-none mb-0 no-print border-b-4 border-amber-500">
+        <div class="max-w-7xl mx-auto text-center">
+            <h1 class="text-3xl font-extrabold mb-2 text-amber-400">Digital ICRA PPI Integrated</h1>
+            <p class="text-slate-300">Infection Control Risk Assessment - Profil, PoA, Audit, & PCRA</p>
+        </div>
+    </header>
+
+    <nav class="bg-white border-b border-slate-200 shadow-sm sticky top-0 z-40 no-print mb-6">
+        <div class="max-w-7xl mx-auto px-4 py-3 flex flex-col xl:flex-row justify-between items-center gap-4">
+            <div class="flex flex-wrap justify-center gap-2">
+                <button onclick="switchTab('penjelasan')" id="btn-tab-penjelasan" class="py-2 px-3 focus:outline-none transition-all tab-active text-sm font-semibold rounded hover:bg-slate-50">Alur Panduan</button>
+                <button onclick="switchTab('program')" id="btn-tab-program" class="py-2 px-3 focus:outline-none transition-all tab-inactive text-sm font-semibold rounded hover:bg-slate-50">1. Profil Risiko</button>
+                <button onclick="switchTab('poa')" id="btn-tab-poa" class="py-2 px-3 focus:outline-none transition-all tab-inactive text-sm font-semibold rounded hover:bg-slate-50">2. Plan of Action</button>
+                <button onclick="switchTab('audit')" id="btn-tab-audit" class="py-2 px-3 focus:outline-none transition-all tab-inactive text-sm font-semibold rounded hover:bg-slate-50">3. Audit & Evaluasi</button>
+                <button onclick="switchTab('konstruksi')" id="btn-tab-konstruksi" class="py-2 px-3 focus:outline-none transition-all tab-inactive text-sm font-semibold rounded hover:bg-slate-50">4. ICRA Bangunan</button>
+            </div>
+            
+            <button onclick="downloadMasterPDF()" id="btn-master-print" class="w-full xl:w-auto bg-amber-500 text-white px-6 py-3 rounded-lg font-extrabold shadow-lg hover:bg-amber-600 hover:scale-105 transition-all uppercase tracking-tight text-sm flex items-center justify-center gap-2 border border-amber-600">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+                Simpan Buku Laporan Lengkap
+            </button>
+        </div>
+    </nav>
+
+    <main id="tab-penjelasan" class="max-w-5xl mx-auto px-4 py-4 main-content">
+        <div class="bg-white rounded-xl shadow-md p-8 border border-slate-100">
+            <h2 class="text-2xl font-bold text-amber-800 mb-6 border-b pb-2 text-center md:text-left">Siklus PDCA dalam Aplikasi ICRA PPI</h2>
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8 text-center text-sm">
+                <div class="p-4 bg-slate-50 rounded-lg border border-slate-200 relative">
+                    <span class="block text-3xl mb-2">🔍</span>
+                    <h3 class="font-bold text-slate-800">1. Identifikasi</h3>
+                    <p class="text-slate-500 mt-1 text-[11px] leading-tight">Mencari potensi masalah dengan AI (Inherent Risk).</p>
+                    <div class="hidden md:block absolute -right-3 top-1/2 transform -translate-y-1/2 text-slate-300">▶</div>
+                </div>
+                <div class="p-4 bg-slate-50 rounded-lg border border-slate-200 relative">
+                    <span class="block text-3xl mb-2">⚖️</span>
+                    <h3 class="font-bold text-slate-800">2. Profiling</h3>
+                    <p class="text-slate-500 mt-1 text-[11px] leading-tight">Skoring PDS untuk mendapatkan Ranking prioritas.</p>
+                    <div class="hidden md:block absolute -right-3 top-1/2 transform -translate-y-1/2 text-slate-300">▶</div>
+                </div>
+                <div class="p-4 bg-slate-50 rounded-lg border border-slate-200 relative">
+                    <span class="block text-3xl mb-2">🛠️</span>
+                    <h3 class="font-bold text-slate-800">3. PoA (Plan)</h3>
+                    <p class="text-slate-500 mt-1 text-[11px] leading-tight">Menyusun strategi Mitigasi dari risiko prioritas tinggi.</p>
+                    <div class="hidden md:block absolute -right-3 top-1/2 transform -translate-y-1/2 text-slate-300">▶</div>
+                </div>
+                <div class="p-4 bg-teal-50 rounded-lg border border-teal-200">
+                    <span class="block text-3xl mb-2">📋</span>
+                    <h3 class="font-bold text-teal-800">4. Audit (Check)</h3>
+                    <p class="text-teal-600 mt-1 text-[11px] leading-tight">Mencatat observasi & analisa evaluasi AI otomatis.</p>
+                </div>
+            </div>
+            
+            <div class="bg-amber-50 p-6 rounded-xl border-l-4 border-amber-500 space-y-4">
+                <h4 class="font-bold text-amber-900">Alur Penggunaan:</h4>
+                <ol class="list-decimal pl-4 text-sm text-slate-700 space-y-2">
+                    <li>Gunakan <strong>Tab Profil Risiko</strong> untuk mendaftar semua masalah. Gunakan AI untuk ide dan usulan skor awal.</li>
+                    <li>Pada tabel profil, klik tombol <span class="bg-slate-800 text-white px-2 py-0.5 rounded text-[10px] font-bold">⚡ Tangani</span> pada risiko zona merah/oranye.</li>
+                    <li>Sistem akan membawa Anda ke <strong>Tab Plan of Action</strong> dan membuatkan strategi otomatis.</li>
+                    <li>Di Tab PoA, klik tombol <span class="bg-teal-600 text-white px-2 py-0.5 rounded text-[10px] font-bold">📋 Buat Audit</span> untuk menyuruh AI membuatkan form ceklis pengawasan.</li>
+                    <li>Di Tab Audit, isikan jawaban observasi (Ya/Tidak), lalu klik <span class="bg-amber-200 text-amber-800 px-2 py-0.5 rounded text-[10px] font-bold">✨ Generate Analisis AI</span> untuk merumuskan evaluasi akhir.</li>
+                    <li>Gunakan <strong>Tab ICRA Bangunan</strong> khusus saat akan ada proyek konstruksi/renovasi.</li>
+                    <li>Klik tombol oranye <strong>"Simpan Buku Laporan Lengkap"</strong> untuk mencetak semua tab menjadi satu dokumen Tata Naskah.</li>
+                </ol>
+            </div>
+            <div class="mt-8 flex justify-center">
+                <button onclick="switchTab('program')" class="bg-slate-800 hover:bg-slate-900 text-white px-8 py-3 rounded-lg font-bold shadow-lg transition-all uppercase tracking-widest text-sm">Mulai Asesmen Risiko &rarr;</button>
+            </div>
+        </div>
+    </main>
+
+    <main id="tab-program" class="max-w-7xl mx-auto px-4 hidden main-content">
+        <div class="bg-amber-50 border-l-4 border-amber-500 p-4 mb-6 rounded-r shadow-sm no-print">
+            <h3 class="font-bold text-amber-900 text-lg uppercase tracking-tight">ICRA Program - Risk Register</h3>
+            <p class="text-sm text-amber-800 mt-1 font-medium italic">Ide AI akan menyarankan kategori dan nilai skoring PDS secara otomatis.</p>
+        </div>
+
+        <section class="bg-white rounded-xl shadow-sm p-6 border border-slate-200 mb-6 print-shadow-none no-print">
+            <h2 class="text-sm font-bold text-slate-800 mb-4 border-b pb-2 uppercase tracking-widest">Identitas Fasilitas & Asesmen</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+                <div>
+                    <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Jenis Fasyankes</label>
+                    <select id="facility-type" class="w-full border border-slate-300 rounded p-2 text-sm bg-slate-50 outline-none focus:ring-1 focus:ring-amber-400" onchange="updateUnitInput(); hideAIContainer();">
+                        <option value="">-- Pilih Jenis --</option>
+                        <option value="Rumah Sakit">Rumah Sakit</option>
+                        <option value="Puskesmas">Puskesmas</option>
+                        <option value="Klinik">Klinik Pratama / Utama</option>
+                    </select>
+                </div>
+                <div class="lg:col-span-2">
+                    <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Nama Fasilitas</label>
+                    <input type="text" id="facility-name" class="w-full border border-slate-300 rounded p-2 text-sm bg-slate-50 outline-none focus:ring-1 focus:ring-amber-400" placeholder="Contoh: RSUD / UPTD Puskesmas">
+                </div>
+                <div id="unit-container">
+                    <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Unit / Ruangan / Klaster</label>
+                    <input type="text" id="facility-unit-text" class="w-full border border-slate-300 rounded p-2 text-sm bg-slate-50 outline-none focus:ring-1 focus:ring-amber-400" placeholder="Contoh: Poli Gigi">
+                    
+                    <select id="facility-unit-select" class="w-full border border-slate-300 rounded p-2 text-sm bg-slate-50 outline-none focus:ring-1 focus:ring-amber-400 hidden">
+                        <option value="">-- Pilih Klaster ILP --</option>
+                        <optgroup label="Klaster 1: Manajemen">
+                            <option value="Manajemen / Tata Usaha">Manajemen / Tata Usaha</option>
+                        </optgroup>
+                        <optgroup label="Klaster 2: Ibu, Anak, Remaja">
+                            <option value="Klaster 2 (Poli KIA / KB / Anak)">Poli KIA / KB / Anak</option>
+                            <option value="Klaster 2 (Ruang Bersalin/PONED)">Ruang Bersalin / PONED</option>
+                        </optgroup>
+                        <optgroup label="Klaster 3: Dewasa & Lansia">
+                            <option value="Klaster 3 (Poli Umum / Lansia)">Poli Umum / Lansia</option>
+                        </optgroup>
+                        <optgroup label="Klaster 4: Penanggulangan Penyakit">
+                            <option value="Klaster 4 (Poli TB / DOTS)">Poli TB / DOTS</option>
+                            <option value="Klaster 4 (Poli Infeksi / Kusta)">Poli Infeksi / Kusta</option>
+                        </optgroup>
+                        <optgroup label="Lintas Klaster">
+                            <option value="Lintas Klaster (UGD/Tindakan)">UGD / Tindakan</option>
+                            <option value="Lintas Klaster (Rawat Inap)">Rawat Inap</option>
+                            <option value="Lintas Klaster (Poli Gigi/Kesgilut)">Poli Gigi / Kesgilut</option>
+                            <option value="Lintas Klaster (Laboratorium)">Laboratorium</option>
+                            <option value="Lintas Klaster (Farmasi/Apotek)">Farmasi / Apotek</option>
+                            <option value="Lintas Klaster (Pendaftaran)">Pendaftaran / RM</option>
+                            <option value="Lintas Klaster (Sterilisasi/CSSD)">Sterilisasi / CSSD</option>
+                            <option value="Lintas Klaster (Laundry/Kesling)">Laundry / Kesling</option>
+                        </optgroup>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Tgl Asesmen</label>
+                    <input type="date" id="prog-assessment-date" class="w-full border border-slate-300 rounded p-2 text-sm bg-slate-50 outline-none focus:ring-1 focus:ring-amber-400">
+                </div>
+            </div>
+        </section>
+
+        <div class="grid grid-cols-1 xl:grid-cols-3 gap-6 mb-8">
+            <div class="bg-white rounded-xl shadow-sm p-6 border border-slate-200 xl:col-span-1 h-fit sticky top-24 no-print">
+                <h2 class="font-bold text-slate-800 mb-4 border-b pb-2">Entry Masalah Risiko</h2>
+                
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Kategori</label>
+                        <select id="prog-cat" class="w-full border border-slate-300 rounded p-2 text-sm bg-slate-50 outline-none focus:ring-2 focus:ring-amber-400 font-medium">
+                            <option value="HAIs">Kejadian HAIs (ISK, VAP, IAD, IDO)</option>
+                            <option value="Kesehatan Kerja">Kesehatan Staf (K3RS)</option>
+                            <option value="Kewaspadaan Isolasi">Kewaspadaan Isolasi (HH, APD)</option>
+                            <option value="Lingkungan">Fasilitas (Sampah, Air, Linen)</option>
+                            <option value="Transmisi Penyakit">Transmisi Penyakit (TBC, Flu)</option>
+                            <option value="STUCK" class="font-bold text-amber-700 italic">💡 Saya Bingung (AI Cari Semuanya)</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Pengarah Konteks (Opsional)</label>
+                        <input type="text" id="prog-guide" class="w-full border border-slate-300 rounded p-2 text-sm bg-slate-50 focus:ring-2 focus:ring-amber-500 outline-none" placeholder="Misal: ruang bedah, hand hygiene...">
+                    </div>
+
+                    <div>
+                        <div class="flex justify-between items-center mb-1">
+                            <label class="block text-[10px] font-bold text-slate-500 uppercase">Potensi Masalah</label>
+                            <button onclick="generateAIIdeas()" id="btn-ai" class="text-[10px] text-amber-700 font-bold hover:text-amber-900 bg-amber-100 px-2 py-0.5 rounded transition-all border border-amber-200 shadow-sm active:scale-95 uppercase tracking-tighter">💡 Inspirasi AI</button>
+                        </div>
+                        
+                        <div id="ai-ideas-container" class="hidden mb-2 p-3 bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 rounded-lg shadow-inner text-xs">
+                            <div id="ai-loading" class="hidden py-4 flex flex-col items-center justify-center text-center">
+                                <div class="dot-flashing mb-2"></div>
+                                <span class="text-[9px] font-bold text-amber-700 animate-pulse mt-2 uppercase">AI Menganalisis...</span>
+                            </div>
+                            <div id="ai-content">
+                                <ul id="ai-ideas-list" class="space-y-1.5 mb-2"></ul>
+                                <div class="flex justify-end mt-2 pt-2 border-t border-amber-100">
+                                    <button onclick="generateAIIdeas()" class="text-[9px] text-amber-700 font-bold hover:underline tracking-tighter uppercase">🔄 Cari Ide Lain</button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <textarea id="prog-issue" rows="3" class="w-full border border-slate-300 rounded p-2 text-sm bg-slate-50 outline-none focus:ring-2 focus:ring-amber-400 focus:bg-white" placeholder="Pilih ide AI atau ketik manual..."></textarea>
+                    </div>
+                    
+                    <div class="space-y-3 bg-slate-50 p-3 rounded-lg border border-slate-200 shadow-inner" id="pds-container">
+                        <div>
+                            <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Probabilitas (P)</label>
+                            <select id="prog-p" class="w-full border border-slate-300 rounded p-1.5 text-xs bg-white cursor-pointer outline-none">
+                                <option value="1">1 - Sangat Jarang</option>
+                                <option value="2">2 - Jarang</option>
+                                <option value="3" selected>3 - Kadang-kadang</option>
+                                <option value="4">4 - Sering</option>
+                                <option value="5">5 - Sangat Sering</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Dampak (D)</label>
+                            <select id="prog-d" class="w-full border border-slate-300 rounded p-1.5 text-xs bg-white cursor-pointer outline-none">
+                                <option value="1">1 - Sangat Ringan</option>
+                                <option value="2">2 - Ringan</option>
+                                <option value="3" selected>3 - Sedang</option>
+                                <option value="4">4 - Berat</option>
+                                <option value="5">5 - Bencana / Kematian</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Sistem (S)</label>
+                            <select id="prog-s" class="w-full border border-slate-300 rounded p-1.5 text-xs bg-white cursor-pointer outline-none">
+                                <option value="1">1 - Sangat Baik</option>
+                                <option value="2">2 - Baik</option>
+                                <option value="3" selected>3 - Cukup (Fasilitas Minim)</option>
+                                <option value="4">4 - Kurang</option>
+                                <option value="5">5 - Buruk / Tidak Ada</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <button onclick="addProgramRisk()" class="w-full bg-slate-800 hover:bg-slate-900 text-white font-bold py-3 rounded-lg transition-all shadow-md active:scale-95 text-sm uppercase">Simpan ke Profil</button>
+                </div>
+            </div>
+
+            <div class="xl:col-span-2 w-full">
+                <div class="bg-white rounded-xl shadow-sm p-6 border border-slate-200 mb-6 overflow-hidden flex flex-col print-shadow-none">
+                    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 border-b pb-2 gap-4">
+                        <h2 class="font-bold text-slate-800 text-lg uppercase tracking-tight">Matriks Profil Risiko PPI (Residual Risk)</h2>
+                    </div>
+                    
+                    <div class="overflow-x-auto w-full">
+                        <table class="w-full text-sm text-left border-collapse">
+                            <thead class="bg-slate-100 text-slate-700 border-b-2 border-slate-300 text-[10px] uppercase tracking-wider">
+                                <tr>
+                                    <th class="p-3 border border-slate-200 text-center">Rank</th>
+                                    <th class="p-3 border border-slate-200 min-w-[200px]">Potensi Risiko & Kategori</th>
+                                    <th class="p-3 border border-slate-200 text-center w-8">P</th>
+                                    <th class="p-3 border border-slate-200 text-center w-8">D</th>
+                                    <th class="p-3 border border-slate-200 text-center w-8">S</th>
+                                    <th class="p-3 border border-slate-200 text-center font-bold bg-amber-50 w-12">Skor</th>
+                                    <th class="p-3 border border-slate-200 text-center no-print">Tindakan</th>
+                                </tr>
+                            </thead>
+                            <tbody id="prog-table-body" class="divide-y divide-slate-200">
+                                <tr id="prog-empty"><td colspan="7" class="p-12 text-center text-slate-400 italic">Belum ada risiko teridentifikasi.</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <main id="tab-poa" class="max-w-7xl mx-auto px-4 hidden main-content">
+        <div class="bg-white rounded-xl shadow-md p-6 border border-slate-200 print-shadow-none">
+            <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4 border-b pb-4">
+                <div>
+                    <h2 class="text-2xl font-bold text-slate-800 uppercase tracking-tight">Plan of Action (Rencana Penanganan)</h2>
+                    <p class="text-sm text-slate-500 italic no-print">Dokumentasi strategi perbaikan PPI.</p>
+                </div>
+            </div>
+
+            <div class="overflow-x-auto w-full">
+                <table class="w-full text-xs text-left border-collapse border border-slate-300">
+                    <thead class="bg-slate-800 text-white text-[10px] uppercase tracking-widest">
+                        <tr>
+                            <th class="p-3 border border-slate-600 w-48">Masalah / Risiko</th>
+                            <th class="p-3 border border-slate-600 w-32">Opsi Penanganan</th>
+                            <th class="p-3 border border-slate-600 min-w-[250px]">Rencana Aksi (Mitigasi/Edukasi)</th>
+                            <th class="p-3 border border-slate-600 w-32">Tujuan / Target</th>
+                            <th class="p-3 border border-slate-600 w-24">PIC</th>
+                            <th class="p-3 border border-slate-600 w-24">Timeline</th>
+                            <th class="p-3 border border-slate-600 w-24">Resource</th>
+                            <th class="p-3 border border-slate-600 text-center no-print w-24">Aksi Lanjut</th>
+                        </tr>
+                    </thead>
+                    <tbody id="poa-table-body" class="divide-y divide-slate-200 bg-white">
+                        <tr id="poa-empty"><td colspan="8" class="p-12 text-center text-slate-400 italic font-medium">Lembar PoA kosong. Klik "Tangani" pada tabel Profil Risiko.</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </main>
+
+    <main id="tab-audit" class="max-w-7xl mx-auto px-4 hidden main-content">
+        <div class="bg-teal-50 border-l-4 border-teal-500 p-4 mb-6 rounded-r shadow-sm flex flex-col sm:flex-row justify-between items-start sm:items-center no-print gap-4">
+            <div>
+                <h3 class="font-bold text-teal-900 text-lg uppercase tracking-tight">Instrumen Audit & Analisis Evaluasi</h3>
+                <p class="text-sm text-teal-800 mt-1 font-medium">Ceklis otomatis untuk evaluasi (Check) & Analisis (Action).</p>
+            </div>
+        </div>
+
+        <div id="audit-list-container" class="space-y-6">
+            <div id="audit-empty" class="bg-white rounded-xl shadow-sm p-12 text-center border border-slate-200 print-shadow-none no-print">
+                <span class="block text-4xl mb-4 opacity-50">📋</span>
+                <p class="text-slate-500 italic font-medium">Belum ada instrumen audit. Buat Plan of Action (PoA) terlebih dahulu, lalu klik tombol <b>"Buat Audit"</b>.</p>
+            </div>
+        </div>
+    </main>
+
+    <main id="tab-konstruksi" class="max-w-6xl mx-auto px-4 hidden main-content">
+        <div class="bg-sky-50 border-l-4 border-sky-500 p-4 mb-6 rounded-r shadow-sm flex flex-col sm:flex-row justify-between items-start sm:items-center no-print gap-4">
+            <div>
+                <h3 class="font-bold text-sky-900 text-lg uppercase tracking-tight">ICRA Bangunan / PCRA</h3>
+                <p class="text-sm text-sky-800 mt-1 font-medium text-xs">Penentuan Kelas Kewaspadaan Proyek Konstruksi & Renovasi.</p>
+            </div>
+            <button onclick="downloadPCRAPDF()" id="btn-pcra-print" class="w-full sm:w-auto bg-sky-600 hover:bg-sky-700 text-white px-5 py-2.5 text-xs font-extrabold rounded-full shadow-md transition-all flex items-center justify-center gap-2 uppercase tracking-tight border border-sky-700">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+                Simpan PDF Izin Kerja (Form F4)
+            </button>
+        </div>
+
+        <section class="bg-white rounded-xl shadow-sm p-6 border border-slate-200 mb-6 print-shadow-none">
+            <h2 class="text-sm font-bold text-slate-800 mb-4 border-b pb-2 uppercase tracking-widest">Identitas Proyek Konstruksi</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div class="lg:col-span-2">
+                    <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Nama Proyek / Pekerjaan</label>
+                    <input type="text" id="pcra-project-name" class="w-full border border-slate-300 rounded p-2 text-sm bg-slate-50 outline-none focus:ring-1 focus:ring-sky-400" placeholder="Contoh: Renovasi Plafon OK">
+                </div>
+                <div>
+                    <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Lokasi / Unit Kerja</label>
+                    <input type="text" id="pcra-location" class="w-full border border-slate-300 rounded p-2 text-sm bg-slate-50 outline-none focus:ring-1 focus:ring-sky-400" placeholder="Contoh: Ruang Operasi">
+                </div>
+                <div>
+                    <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Kontraktor Pelaksana</label>
+                    <input type="text" id="pcra-contractor" class="w-full border border-slate-300 rounded p-2 text-sm bg-slate-50 outline-none focus:ring-1 focus:ring-sky-400" placeholder="Nama CV/PT">
+                </div>
+                <div>
+                    <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Tanggal Asesmen</label>
+                    <input type="date" id="pcra-assessment-date" class="w-full border border-slate-300 rounded p-2 text-sm bg-slate-50 outline-none focus:ring-1 focus:ring-sky-400">
+                </div>
+            </div>
+        </section>
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8 no-print">
+            <section class="bg-white rounded-xl shadow-sm p-6 border border-slate-200">
+                <h2 class="text-[11px] font-bold text-slate-500 uppercase tracking-widest mb-4">Langkah 1: Pilih Tipe Proyek</h2>
+                <div class="space-y-3" id="project-types"></div>
+                <div id="custom-type-container" class="mt-4 hidden p-3 bg-sky-50 rounded border border-sky-100">
+                    <label class="block text-[10px] font-bold text-sky-800 uppercase mb-1">Sesuaikan Narasi Tipe Proyek (Bisa Diedit):</label>
+                    <textarea id="custom-type-text" rows="2" class="w-full border border-sky-200 rounded p-2 text-sm bg-white outline-none focus:ring-1 focus:ring-sky-400 text-slate-700"></textarea>
+                </div>
+            </section>
+            
+            <section class="bg-white rounded-xl shadow-sm p-6 border border-slate-200">
+                <h2 class="text-[11px] font-bold text-slate-500 uppercase tracking-widest mb-4">Langkah 2: Pilih Area Risiko Pasien</h2>
+                <div class="space-y-3" id="risk-groups"></div>
+                <div id="custom-risk-container" class="mt-4 hidden p-3 bg-sky-50 rounded border border-sky-100">
+                    <label class="block text-[10px] font-bold text-sky-800 uppercase mb-1">Sesuaikan Narasi Area Risiko (Bisa Diedit):</label>
+                    <textarea id="custom-risk-text" rows="2" class="w-full border border-sky-200 rounded p-2 text-sm bg-white outline-none focus:ring-1 focus:ring-sky-400 text-slate-700"></textarea>
+                </div>
+            </section>
+        </div>
+
+        <section class="bg-slate-800 text-white rounded-xl shadow-lg p-10 mb-8 text-center border border-slate-700 relative overflow-hidden print-shadow-none">
+            <div class="absolute top-0 left-0 w-full h-2 bg-sky-400"></div>
+            <div class="flex flex-col items-center justify-center w-full">
+                <div id="class-result" class="text-7xl font-black text-slate-500 mb-2 drop-shadow-sm uppercase">KELAS ?</div>
+                <p id="class-desc" class="text-slate-400 max-w-2xl text-base mt-2 no-print">Pilih Tipe Proyek dan Area Risiko di atas untuk melihat hasilnya.</p>
+                
+                <div id="conclusion-container" class="hidden w-full max-w-3xl mt-6 text-left bg-slate-700 p-4 rounded-lg border border-slate-600">
+                    <label class="block text-[10px] font-bold text-sky-300 uppercase mb-2">Narasi Kesimpulan Kewaspadaan (Bisa Diedit):</label>
+                    <textarea id="custom-conclusion-text" rows="3" class="w-full border border-slate-500 rounded p-3 text-sm bg-slate-800 text-white outline-none focus:ring-1 focus:ring-sky-400 leading-relaxed"></textarea>
+                </div>
+            </div>
+        </section>
+
+        <section id="interventions-section" class="bg-white rounded-xl shadow-sm p-6 border border-slate-200 mb-8 hidden print-shadow-none">
+            <div class="flex justify-between items-center mb-6 border-b pb-4">
+                <h2 class="text-xl font-bold text-slate-800">Ceklis Intervensi Wajib Terpilih</h2>
+            </div>
+            <p class="text-xs text-slate-500 italic mb-4 no-print">Sistem hanya menampilkan intervensi yang paling sesuai dengan KELAS yang didapat. Anda dapat mengedit teks intervensi di bawah secara manual dengan cara mengkliknya.</p>
+            <div id="intervention-list" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
+        </section>
+    </main>
+
+    <script>
+        // API Key Environment
+        const apiKey = ""; 
+
+        // ========================== STATE & DATA PENYIMPANAN ==========================
+        let programRisks = [];
+        let sT = null;
+        let sR = null;
+
+        // ========================== UTILITIES ==========================
+        function switchTab(tabId) {
+            document.querySelectorAll('main.main-content').forEach(m => m.classList.add('hidden'));
+            const target = document.getElementById(`tab-${tabId}`);
+            if(target) target.classList.remove('hidden');
+            
+            const btns = ['btn-tab-penjelasan', 'btn-tab-program', 'btn-tab-poa', 'btn-tab-audit', 'btn-tab-konstruksi'];
+            btns.forEach(b => {
+                const el = document.getElementById(b);
+                if (el) {
+                    if (b === `btn-tab-${tabId}`) el.className = 'py-2 px-3 focus:outline-none transition-all tab-active text-sm font-bold border-b-4 border-amber-500 text-amber-700 rounded hover:bg-slate-50';
+                    else el.className = 'py-2 px-3 focus:outline-none transition-all tab-inactive text-sm font-semibold border-b-4 border-transparent text-slate-500 hover:text-slate-800 hover:border-slate-300 rounded hover:bg-slate-50';
+                }
+            });
+            window.scrollTo(0,0);
+        }
+
+        // Fungsi Escape
+        function escapeJS(str) {
+            if (!str) return '';
+            return String(str)
+                .replace(/\\/g, '\\\\')
+                .replace(/'/g, "\\'")
+                .replace(/"/g, '&quot;')
+                .replace(/\n/g, '\\n')
+                .replace(/\r/g, '');
+        }
+
+        function cleanJSON(text) {
+            if (!text) return '';
+            return text.replace(/```json/gi, '').replace(/```/g, '').trim();
+        }
+
+        async function fetchWithRetry(url, options, retries = 5, backoff = 1000) {
+            for (let i = 0; i < retries; i++) {
+                try {
+                    const res = await fetch(url, options);
+                    if (res.ok) return res;
+                } catch (e) {}
+                await new Promise(r => setTimeout(r, backoff * Math.pow(2, i)));
+            }
+            throw new Error("Gagal terhubung ke API AI");
+        }
+
+        // ========================================================
+        // FITUR CETAK MASTER (LAPORAN PROGRAM PPI - PDF)
+        // ========================================================
+        function downloadMasterPDF() {
+            const btn = document.getElementById('btn-master-print');
+            const originalText = btn.innerHTML;
+            btn.innerHTML = `<div class="dot-flashing !bg-white before:!bg-white after:!bg-white mr-4"></div> Menyusun PDF...`;
+            btn.disabled = true;
+
+            const htmlContent = buildCleanHTMLReport();
+            
+            const finalHtmlString = `
+                <div style="font-family: 'Times New Roman', Times, serif; color: #000; width: 1050px; background-color: #fff; padding: 10px; box-sizing: border-box;">
+                    ${htmlContent}
+                </div>
+            `;
+
+            const opt = {
+                margin:       [10, 10, 10, 10], 
+                filename:     'Buku_Laporan_ICRA_PPI.pdf',
+                image:        { type: 'jpeg', quality: 0.98 },
+                html2canvas:  { scale: 2, useCORS: true, windowWidth: 1100 },
+                jsPDF:        { unit: 'mm', format: [330.2, 215.9], orientation: 'landscape' },
+                pagebreak:    { mode: ['css', 'legacy'] }
+            };
+
+            html2pdf().set(opt).from(finalHtmlString).save().then(() => {
+                btn.innerHTML = originalText;
+                btn.disabled = false;
+            }).catch(err => {
+                console.error(err);
+                alert("Terjadi kesalahan saat menyusun PDF.");
+                btn.innerHTML = originalText;
+                btn.disabled = false;
+            });
+        }
+
+        function buildCleanHTMLReport() {
+            const facName = document.getElementById('facility-name').value || "NAMA FASILITAS KESEHATAN";
+            
+            let html = `
+                <div style="text-align: center; border-bottom: 3px solid black; padding-bottom: 10px; margin-bottom: 25px;">
+                    <h1 style="font-size: 18pt; font-weight: bold; margin: 0; text-transform: uppercase;">${facName}</h1>
+                    <h2 style="font-size: 14pt; font-weight: bold; margin: 5px 0;">KOMITE PENCEGAHAN DAN PENGENDALIAN INFEKSI</h2>
+                    <p style="font-size: 10pt; font-style: italic; margin: 0;">Buku Laporan Terpadu: Profil Risiko, Plan of Action (PoA), dan Instrumen Audit Lapangan</p>
+                </div>
+            `;
+
+            // BAGIAN 1: PROFIL RISIKO
+            html += `<h3 style="font-size: 12pt; font-weight: bold; margin-bottom: 10px;">1. MATRIKS PROFIL RISIKO (RESIDUAL RISK)</h3>`;
+            html += `<table style="width: 100%; border-collapse: collapse; font-size: 10pt; margin-bottom: 30px;" border="1">
+                        <tr style="background-color: #f0f0f0;">
+                            <th style="padding: 6px; border: 1px solid #000;">Rank</th>
+                            <th style="padding: 6px; border: 1px solid #000;">Kategori</th>
+                            <th style="padding: 6px; border: 1px solid #000;">Potensi Risiko</th>
+                            <th style="padding: 6px; border: 1px solid #000;">P</th>
+                            <th style="padding: 6px; border: 1px solid #000;">D</th>
+                            <th style="padding: 6px; border: 1px solid #000;">S</th>
+                            <th style="padding: 6px; border: 1px solid #000;">Skor</th>
+                        </tr>`;
+            
+            if (programRisks.length === 0) {
+                html += `<tr><td colspan="7" style="padding: 10px; text-align: center; border: 1px solid #000;">Belum ada data risiko yang dinilai.</td></tr>`;
+            } else {
+                [...programRisks].sort((a, b) => b.score - a.score).forEach((r, i) => {
+                    html += `<tr>
+                        <td style="padding: 6px; text-align: center; border: 1px solid #000;">${i + 1}</td>
+                        <td style="padding: 6px; border: 1px solid #000; text-transform: uppercase; font-size: 8pt;">${r.cat}</td>
+                        <td style="padding: 6px; border: 1px solid #000;">${r.issue}</td>
+                        <td style="padding: 6px; text-align: center; border: 1px solid #000;">${r.p}</td>
+                        <td style="padding: 6px; text-align: center; border: 1px solid #000;">${r.d}</td>
+                        <td style="padding: 6px; text-align: center; border: 1px solid #000;">${r.s}</td>
+                        <td style="padding: 6px; text-align: center; border: 1px solid #000; font-weight: bold;">${r.score}</td>
+                    </tr>`;
+                });
+            }
+            html += `</table>`;
+
+            // BAGIAN 2: POA
+            html += `<div class="html2pdf__page-break"></div>`; 
+            html += `<h3 style="font-size: 12pt; font-weight: bold; margin-bottom: 10px; padding-top: 10px;">2. PLAN OF ACTION (RENCANA PENANGANAN)</h3>`;
+            html += `<table style="width: 100%; border-collapse: collapse; font-size: 10pt; margin-bottom: 30px;" border="1">
+                        <tr style="background-color: #f0f0f0;">
+                            <th style="padding: 6px; border: 1px solid #000; width: 15%;">Masalah / Risiko</th>
+                            <th style="padding: 6px; border: 1px solid #000; width: 8%;">Opsi</th>
+                            <th style="padding: 6px; border: 1px solid #000; width: 30%;">Rencana Aksi</th>
+                            <th style="padding: 6px; border: 1px solid #000; width: 15%;">Tujuan</th>
+                            <th style="padding: 6px; border: 1px solid #000; width: 10%;">PIC</th>
+                            <th style="padding: 6px; border: 1px solid #000; width: 10%;">Timeline</th>
+                            <th style="padding: 6px; border: 1px solid #000; width: 12%;">Resource</th>
+                        </tr>`;
+            
+            const poaRows = document.querySelectorAll('#poa-table-body tr');
+            if (poaRows.length === 0 || poaRows[0].id === 'poa-empty') {
+                html += `<tr><td colspan="7" style="padding: 10px; text-align: center; border: 1px solid #000;">Belum ada Plan of Action.</td></tr>`;
+            } else {
+                poaRows.forEach(tr => {
+                    if (tr.innerHTML.includes('AI sedang menganalisis')) return;
+                    const cells = tr.querySelectorAll('td');
+                    if (cells.length < 7) return;
+                    
+                    const optSelect = cells[1].querySelector('select');
+                    const optText = optSelect ? optSelect.value : cells[1].innerText;
+
+                    html += `<tr>
+                        <td style="padding: 6px; border: 1px solid #000;">${cells[0].innerText}</td>
+                        <td style="padding: 6px; border: 1px solid #000; text-align: center; font-weight: bold;">${optText}</td>
+                        <td style="padding: 6px; border: 1px solid #000; white-space: pre-wrap;">${cells[2].innerText}</td>
+                        <td style="padding: 6px; border: 1px solid #000;">${cells[3].innerText}</td>
+                        <td style="padding: 6px; border: 1px solid #000;">${cells[4].innerText}</td>
+                        <td style="padding: 6px; border: 1px solid #000;">${cells[5].innerText}</td>
+                        <td style="padding: 6px; border: 1px solid #000;">${cells[6].innerText}</td>
+                    </tr>`;
+                });
+            }
+            html += `</table>`;
+
+            // BAGIAN 3: AUDIT
+            const auditCards = document.querySelectorAll('.audit-card');
+            if (auditCards.length > 0) {
+                html += `<div class="html2pdf__page-break"></div>`;
+                html += `<h3 style="font-size: 12pt; font-weight: bold; margin-bottom: 10px; padding-top: 10px;">3. INSTRUMEN AUDIT & HASIL EVALUASI</h3>`;
+                
+                auditCards.forEach((card, index) => {
+                    if (index > 0) html += `<div class="html2pdf__page-break"></div>`;
+                    
+                    const titleEl = card.querySelector('h3');
+                    const title = titleEl ? titleEl.innerText : 'Instrumen Audit';
+                    const strategyEl = card.querySelector('p.bg-slate-50');
+                    const strategy = strategyEl ? strategyEl.innerText.replace('Strategi Diuji: ', '') : '';
+                    
+                    const inputs = card.querySelectorAll('input[type="text"], input[type="date"]');
+                    const unit = inputs[0] ? inputs[0].value : '...................';
+                    const date = inputs[1] ? inputs[1].value : '...................';
+                    const auditor = inputs[2] ? inputs[2].value : '...................';
+
+                    html += `<div style="margin-bottom: 25px;">
+                                <h4 style="font-size: 11pt; font-weight: bold; margin-bottom: 4px;">Risiko: ${title}</h4>
+                                <p style="font-size: 9pt; margin-bottom: 12px; font-style: italic;">Strategi Utama: ${strategy}</p>
+                                
+                                <table style="width: 100%; margin-bottom: 10px; font-size: 10pt; border: none;">
+                                    <tr>
+                                        <td><strong>Unit / Area:</strong> ${unit}</td>
+                                        <td><strong>Tanggal Audit:</strong> ${date}</td>
+                                        <td><strong>Auditor:</strong> ${auditor}</td>
+                                    </tr>
+                                </table>
+                                
+                                <table style="width: 100%; border-collapse: collapse; font-size: 10pt; margin-bottom: 15px;" border="1">
+                                    <tr style="background-color: #f0f0f0;">
+                                        <th style="padding: 6px; border: 1px solid #000; width: 5%;">No</th>
+                                        <th style="padding: 6px; border: 1px solid #000; width: 45%;">Elemen Penilaian (Observasi Lapangan)</th>
+                                        <th style="padding: 6px; border: 1px solid #000; width: 10%;">Ya</th>
+                                        <th style="padding: 6px; border: 1px solid #000; width: 10%;">Tdk</th>
+                                        <th style="padding: 6px; border: 1px solid #000; width: 30%;">Keterangan Temuan</th>
+                                    </tr>`;
+                    
+                    card.querySelectorAll('.audit-row').forEach(row => {
+                        const no = row.cells[0].innerText;
+                        const q = row.cells[1].innerText;
+                        const isYa = row.querySelector('.ans-ya').checked ? 'V' : '';
+                        const isTidak = row.querySelector('.ans-tidak').checked ? 'V' : '';
+                        const note = row.cells[4].innerText;
+
+                        html += `<tr>
+                            <td style="padding: 6px; border: 1px solid #000; text-align: center;">${no}</td>
+                            <td style="padding: 6px; border: 1px solid #000;">${q}</td>
+                            <td style="padding: 6px; border: 1px solid #000; text-align: center; font-weight: bold;">${isYa}</td>
+                            <td style="padding: 6px; border: 1px solid #000; text-align: center; font-weight: bold;">${isTidak}</td>
+                            <td style="padding: 6px; border: 1px solid #000;">${note}</td>
+                        </tr>`;
+                    });
+                    html += `</table>`;
+
+                    // Sertakan Analisis AI jika ada
+                    const analysisDiv = card.querySelector('[id^="analysis-result-"]');
+                    if (analysisDiv && !analysisDiv.classList.contains('hidden') && !analysisDiv.innerHTML.includes('dot-flashing')) {
+                        const proseDiv = analysisDiv.querySelector('.prose');
+                        const analysisContent = proseDiv ? proseDiv.innerHTML : analysisDiv.innerHTML;
+                        
+                        html += `<div style="border: 1px solid #000; padding: 15px; background-color: #fcfcfc; font-size: 10pt;">
+                                    <h4 style="margin-top:0; border-bottom: 1px solid #000; padding-bottom: 5px; margin-bottom: 10px; font-weight: bold;">ANALISIS & REKOMENDASI TINDAK LANJUT</h4>
+                                    ${analysisContent}
+                                 </div>`;
+                    }
+                    html += `</div>`;
+                });
+            }
+            return html;
+        }
+
+        // ========================================================
+        // FITUR CETAK KHUSUS PCRA (FORM IZIN KERJA - PDF)
+        // ========================================================
+        function downloadPCRAPDF() {
+            const btn = document.getElementById('btn-pcra-print');
+            const originalText = btn.innerHTML;
+            btn.innerHTML = `<div class="dot-flashing !bg-white before:!bg-white after:!bg-white mr-4"></div> Menyusun PDF...`;
+            btn.disabled = true;
+
+            const htmlContent = buildCleanPCRAHTMLReport();
+            
+            const finalHtmlString = `
+                <div style="font-family: 'Times New Roman', Times, serif; color: #000; width: 760px; background-color: #fff; padding: 10px; box-sizing: border-box;">
+                    ${htmlContent}
+                </div>
+            `;
+
+            const opt = {
+                margin:       [10, 10, 10, 10], 
+                filename:     'Formulir_Izin_Kerja_PCRA.pdf',
+                image:        { type: 'jpeg', quality: 0.98 },
+                html2canvas:  { scale: 2, useCORS: true, windowWidth: 800 },
+                jsPDF:        { unit: 'mm', format: [215.9, 330.2], orientation: 'portrait' }
+            };
+
+            html2pdf().set(opt).from(finalHtmlString).save().then(() => {
+                btn.innerHTML = originalText;
+                btn.disabled = false;
+            }).catch(err => {
+                console.error(err);
+                alert("Terjadi kesalahan saat menyusun PDF PCRA.");
+                btn.innerHTML = originalText;
+                btn.disabled = false;
+            });
+        }
+
+        function buildCleanPCRAHTMLReport() {
+            const facName = document.getElementById('facility-name').value || "NAMA FASILITAS KESEHATAN";
+            const projName = document.getElementById('pcra-project-name').value || "........................................................";
+            const location = document.getElementById('pcra-location').value || "........................................................";
+            const contractor = document.getElementById('pcra-contractor').value || "........................................................";
+            
+            // Ambil Narasi Custom dari Layar
+            const editedType = document.getElementById('custom-type-text').value || "(Tipe proyek belum dipilih)";
+            const editedRisk = document.getElementById('custom-risk-text').value || "(Area risiko belum dipilih)";
+            const editedConclusion = document.getElementById('custom-conclusion-text').value || "";
+            
+            let classResult = "";
+            if(sT && sR) classResult = matrix[sR][sT];
+
+            const dateInput = document.getElementById('pcra-assessment-date').value;
+            let dateStr = "....... / ....... / 20.....";
+            if(dateInput) {
+                const parts = dateInput.split('-');
+                if(parts.length === 3) dateStr = `${parts[2]} / ${parts[1]} / ${parts[0]}`;
+            }
+
+            let html = `
+                <div style="text-align: center; margin-bottom: 20px;">
+                    <h1 style="font-size: 14pt; font-weight: bold; margin: 0;">FORMULIR PENILAIAN RISIKO PRA-KONSTRUKSI (PCRA) & IZIN KERJA</h1>
+                    <h2 style="font-size: 12pt; font-weight: bold; margin: 5px 0;">(INFECTION CONTROL PERMIT TO WORK)</h2>
+                    <p style="font-size: 11pt; margin-top: 10px;">No. Dokumen: ............................... / PPI / 20.....</p>
+                </div>
+
+                <h3 style="font-size: 11pt; font-weight: bold; margin-bottom: 5px; background-color: #e2e8f0; padding: 4px;">BAGIAN A: IDENTITAS PROYEK</h3>
+                <table style="width: 100%; border: none; font-size: 11pt; margin-bottom: 15px; line-height: 1.5;">
+                    <tr><td style="width: 30%;">Nama Proyek/Pekerjaan</td><td style="width: 70%;">: ${projName}</td></tr>
+                    <tr><td>Lokasi/Unit Kerja</td><td>: ${location}</td></tr>
+                    <tr><td>Kontraktor/Pelaksana</td><td>: ${contractor}</td></tr>
+                    <tr><td>Penanggung Jawab (PIC)</td><td>: ...........................................................</td></tr>
+                    <tr><td>Tanggal Mulai</td><td>: ${dateStr} &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Estimasi Selesai: ....... / ....... / 20.....</td></tr>
+                </table>
+
+                <h3 style="font-size: 11pt; font-weight: bold; margin-bottom: 5px; background-color: #e2e8f0; padding: 4px;">BAGIAN B: TIPE PROYEK</h3>
+                <p style="font-size: 11pt; line-height: 1.4; margin-bottom: 15px; margin-top: 5px; text-align: justify;">
+                    ${escapeJS(editedType).replace(/\\n/g, '<br>')}
+                </p>
+
+                <h3 style="font-size: 11pt; font-weight: bold; margin-bottom: 5px; background-color: #e2e8f0; padding: 4px;">BAGIAN C: AREA RISIKO PASIEN</h3>
+                <p style="font-size: 11pt; line-height: 1.4; margin-bottom: 15px; margin-top: 5px; text-align: justify;">
+                    ${escapeJS(editedRisk).replace(/\\n/g, '<br>')}
+                </p>
+
+                <h3 style="font-size: 11pt; font-weight: bold; margin-bottom: 5px; background-color: #e2e8f0; padding: 4px;">BAGIAN D: KESIMPULAN KELAS KEWASPADAAN</h3>
+                <div style="font-size: 11pt; margin-top: 5px; margin-bottom: 15px; line-height: 1.4;">
+                    <strong>[ KELAS KEWASPADAAN : ${classResult || 'I / II / III / IV'} ]</strong><br>
+                    <p style="margin-top: 5px; text-align: justify;">${escapeJS(editedConclusion).replace(/\\n/g, '<br>')}</p>
+                </div>
+
+                <h3 style="font-size: 11pt; font-weight: bold; margin-bottom: 5px; background-color: #e2e8f0; padding: 4px;">BAGIAN E: CEKLIS INTERVENSI KESELAMATAN YANG WAJIB DIPATUHI</h3>
+                <p style="font-size: 10pt; font-style: italic; margin-top: 0; margin-bottom: 10px;">(Daftar disesuaikan khusus untuk Kelas yang didapat)</p>
+                
+                <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px;" border="1">
+                    <tr>
+                        <th style="width: 10%; padding: 8px; text-align: center; background-color: #f0f0f0;">Cek</th>
+                        <th style="width: 90%; padding: 8px; background-color: #f0f0f0;">Deskripsi Intervensi Pencegahan Infeksi</th>
+                    </tr>
+            `;
+
+            if (classResult) {
+                const uiChecks = document.querySelectorAll('.pcra-editable-intv');
+                if(uiChecks.length > 0) {
+                    uiChecks.forEach(editableSpan => {
+                        const wrapper = editableSpan.closest('div');
+                        const isChecked = wrapper.querySelector('input').checked ? 'V' : '';
+                        const text = editableSpan.innerText;
+                        html += `
+                            <tr>
+                                <td style="padding: 8px; text-align: center; font-weight: bold; font-size: 12pt;">${isChecked}</td>
+                                <td style="padding: 8px; font-size: 10pt; line-height: 1.4; text-align: justify;">${escapeJS(text)}</td>
+                            </tr>
+                        `;
+                    });
+                }
+            } else {
+                html += `<tr><td colspan="2" style="padding: 15px; text-align: center; font-style: italic; font-size: 10pt;">Harap pilih Tipe Proyek dan Area Risiko terlebih dahulu pada aplikasi.</td></tr>`;
+            }
+
+            html += `
+                </table>
+
+                <h3 style="font-size: 11pt; font-weight: bold; margin-bottom: 5px; margin-top: 15px; background-color: #e2e8f0; padding: 4px;">BAGIAN F: PERSETUJUAN DAN OTORISASI</h3>
+                <p style="font-size: 10.5pt; text-align: justify; line-height: 1.4; margin-top: 5px;">
+                    Dengan menandatangani dokumen ini, pihak pelaksana (Kontraktor/Teknisi) setuju untuk mematuhi semua intervensi PPI yang telah diceklis di atas. <strong>Tim PPI berhak menghentikan pekerjaan secara sepihak jika ditemukan pelanggaran standar pengendalian debu yang membahayakan keselamatan pasien.</strong>
+                </p>
+
+                <p style="font-size: 11pt; margin-top: 15px;">Dikeluarkan pada tanggal: ....... / ........................... / 20.......</p>
+                
+                <table style="width: 100%; text-align: center; border: none; margin-top: 20px; font-size: 11pt;">
+                    <tr>
+                        <td style="width: 33%;">Pelaksana Proyek / Teknisi</td>
+                        <td style="width: 33%;">Kepala Ruangan / Unit</td>
+                        <td style="width: 33%;">IPCN / Ketua Komite PPI</td>
+                    </tr>
+                    <tr>
+                        <td style="height: 70px;"></td>
+                        <td></td>
+                        <td></td>
+                    </tr>
+                    <tr>
+                        <td>(________________________)</td>
+                        <td>(________________________)</td>
+                        <td>(________________________)</td>
+                    </tr>
+                </table>
+            `;
+            return html;
+        }
+
+        // ========================== FUNGSI ICRA PROGRAM & AI ==========================
+        function updateUnitInput() {
+            const type = document.getElementById('facility-type').value;
+            const textInput = document.getElementById('facility-unit-text');
+            const selectInput = document.getElementById('facility-unit-select');
+            
+            if (type === 'Puskesmas') {
+                textInput.classList.add('hidden');
+                selectInput.classList.remove('hidden');
+            } else {
+                selectInput.classList.add('hidden');
+                textInput.classList.remove('hidden');
+            }
+        }
+
+        function hideAIContainer() {
+            const el = document.getElementById('ai-ideas-container');
+            if(el) el.classList.add('hidden');
+        }
+
+        async function generateAIIdeas() {
+            const cat = document.getElementById('prog-cat').value;
+            const guide = document.getElementById('prog-guide').value.trim();
+            const container = document.getElementById('ai-ideas-container');
+            const list = document.getElementById('ai-ideas-list');
+            const loading = document.getElementById('ai-loading');
+            const content = document.getElementById('ai-content');
+
+            const facType = document.getElementById('facility-type').value;
+            const facName = document.getElementById('facility-name').value;
+            let facUnit = facType === 'Puskesmas' ? document.getElementById('facility-unit-select').value : document.getElementById('facility-unit-text').value;
+
+            if(!container || !list || !loading || !content) return;
+
+            container.classList.remove('hidden');
+            loading.classList.remove('hidden');
+            content.classList.add('hidden');
+            list.innerHTML = '';
+
+            let contextString = "";
+            if (facType || facName || facUnit) contextString += `Fasyankes ini adalah ${facType || 'Fasilitas'} ${facName ? '('+facName+')' : ''} pada area/unit ${facUnit || 'Umum'}. `;
+            if (guide) contextString += `Konteks tambahan dari user: ${guide}. `;
+
+            let unitOptionsText = "";
+            if (facType === 'Puskesmas') {
+                unitOptionsText = `Pilihan "unit" WAJIB salah satu dari persis ini: "Manajemen / Tata Usaha", "Klaster 2 (Poli KIA / KB / Anak)", "Klaster 2 (Ruang Bersalin/PONED)", "Klaster 3 (Poli Umum / Lansia)", "Klaster 4 (Poli TB / DOTS)", "Klaster 4 (Poli Infeksi / Kusta)", "Lintas Klaster (UGD/Tindakan)", "Lintas Klaster (Rawat Inap)", "Lintas Klaster (Poli Gigi/Kesgilut)", "Lintas Klaster (Laboratorium)", "Lintas Klaster (Farmasi/Apotek)", "Lintas Klaster (Pendaftaran)", "Lintas Klaster (Sterilisasi/CSSD)", "Lintas Klaster (Laundry/Kesling)". `;
+            }
+
+            const prompt = `Berikan 5 ide potensi risiko infeksi ICRA PPI ${cat === "STUCK" ? "lintas kategori" : "kategori " + cat}. Usulkan skor P, D, S (1-5). ${contextString ? 'PENTING: Sesuaikan ide dengan konteks ini -> ' + contextString : ''} ${unitOptionsText}Format JSON: [{"cat": "HAIs/Kesehatan Kerja/Kewaspadaan Isolasi/Lingkungan/Transmisi Penyakit", "unit": "Saran Unit/Ruangan", "issue": "deskripsi spesifik", "p": 3, "d": 4, "s": 2}]`;
+            
+            try {
+                const response = await fetchWithRetry(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }], generationConfig: { responseMimeType: "application/json" }})
+                });
+                const data = await response.json();
+                const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
+                if(!text) throw new Error("No data");
+                const ideas = JSON.parse(cleanJSON(text));
+                renderIdeas(ideas);
+            } catch (e) {
+                renderIdeas([{cat: "HAIs", unit: "Ruang Rawat", issue: "Kegagalan kepatuhan bundle infus harian", p:3, d:2, s:3}]);
+            }
+        }
+
+        function renderIdeas(ideas) {
+            const list = document.getElementById('ai-ideas-list');
+            const loading = document.getElementById('ai-loading');
+            const content = document.getElementById('ai-content');
+            loading.classList.add('hidden');
+            content.classList.remove('hidden');
+            list.innerHTML = '';
+            
+            ideas.forEach(item => {
+                const escapedIssue = escapeJS(item.issue);
+                const escapedCat = escapeJS(item.cat);
+                const escapedUnit = item.unit ? escapeJS(item.unit) : '';
+                
+                list.innerHTML += `<li class="cursor-pointer bg-white p-2 rounded border border-amber-200 hover:bg-amber-100 text-[11px] shadow-sm flex flex-col group" onclick="selectAIIdea('${escapedIssue}', '${escapedCat}', ${item.p}, ${item.d}, ${item.s}, '${escapedUnit}')">
+                    <span class="leading-tight font-medium text-slate-700">✨ ${item.issue}</span>
+                    <span class="text-[8px] text-slate-400 mt-1 uppercase font-bold tracking-tighter">${item.cat}${item.unit ? ' | ' + item.unit : ''} | P${item.p} D${item.d} S${item.s}</span>
+                </li>`;
+            });
+        }
+
+        function selectAIIdea(issue, cat, p, d, s, unit) {
+            document.getElementById('prog-issue').value = issue;
+            if (cat && cat !== "STUCK") document.getElementById('prog-cat').value = cat;
+            if (unit) {
+                const facType = document.getElementById('facility-type').value;
+                if (facType === 'Puskesmas') {
+                    const selectEl = document.getElementById('facility-unit-select');
+                    const optionExists = Array.from(selectEl.options).some(opt => opt.value === unit);
+                    if(optionExists) selectEl.value = unit;
+                } else {
+                    document.getElementById('facility-unit-text').value = unit;
+                }
+            }
+            document.getElementById('prog-p').value = p;
+            document.getElementById('prog-d').value = d;
+            document.getElementById('prog-s').value = s;
+            hideAIContainer();
+            const pds = document.getElementById('pds-container');
+            if(pds) {
+                pds.classList.add('ai-suggested');
+                setTimeout(() => pds.classList.remove('ai-suggested'), 1500);
+            }
+        }
+
+        function addProgramRisk() {
+            const issue = document.getElementById('prog-issue').value;
+            const cat = document.getElementById('prog-cat').value;
+            if (cat === "STUCK") return alert("Silakan tentukan kategori risiko terlebih dahulu.");
+            if (!issue.trim()) return alert("Tuliskan deskripsi masalah risiko.");
+            const p = parseInt(document.getElementById('prog-p').value);
+            const d = parseInt(document.getElementById('prog-d').value);
+            const s = parseInt(document.getElementById('prog-s').value);
+            programRisks.push({ id: Date.now(), cat, issue, p, d, s, score: p*d*s });
+            document.getElementById('prog-issue').value = '';
+            renderProgramTable();
+        }
+
+        function renderProgramTable() {
+            const tbody = document.getElementById('prog-table-body');
+            if(!tbody) return;
+            tbody.innerHTML = '';
+            if (programRisks.length === 0) {
+                tbody.innerHTML = `<tr id="prog-empty"><td colspan="7" class="p-12 text-center text-slate-400 italic">Data kosong. Gunakan fitur Inspirasi AI untuk simulasi risiko.</td></tr>`;
+                return;
+            }
+            programRisks.sort((a, b) => b.score - a.score);
+            programRisks.forEach((risk, index) => {
+                let color = risk.score >= 60 ? 'bg-red-500 text-white animate-pulse shadow-sm' : (risk.score >= 36 ? 'bg-orange-400 text-white shadow-sm' : 'bg-yellow-100 text-yellow-800 font-bold');
+                tbody.innerHTML += `<tr class="text-[11px] hover:bg-slate-50 transition-colors border-b border-slate-200">
+                    <td class="p-3 text-center font-bold text-slate-500">${index + 1}</td>
+                    <td class="p-3">
+                        <span class="block text-[9px] uppercase font-bold text-slate-400 mb-1 tracking-tighter">${risk.cat}</span>
+                        <span class="font-medium text-slate-700 leading-tight">${risk.issue}</span>
+                    </td>
+                    <td class="p-3 text-center">${risk.p}</td>
+                    <td class="p-3 text-center">${risk.d}</td>
+                    <td class="p-3 text-center">${risk.s}</td>
+                    <td class="p-3 text-center font-bold ${color} rounded-sm">${risk.score}</td>
+                    <td class="p-3 text-center no-print space-y-1">
+                        <button onclick="createMitigation(${risk.id})" class="w-full block bg-slate-800 text-white px-2 py-1.5 rounded text-[9px] font-bold shadow hover:bg-slate-700 transition-all uppercase tracking-tighter">⚡ Tangani</button>
+                        <button onclick="deleteProgramRisk(${risk.id})" class="w-full block text-rose-500 font-bold hover:underline text-[9px] uppercase tracking-tighter">Hapus</button>
+                    </td>
+                </tr>`;
+            });
+        }
+
+        function deleteProgramRisk(id) {
+            programRisks = programRisks.filter(r => r.id !== id);
+            renderProgramTable();
+        }
+
+        // ========================== FUNGSI PLAN OF ACTION ==========================
+        async function createMitigation(riskId) {
+            const risk = programRisks.find(r => r.id === riskId);
+            if (!risk) return;
+
+            switchTab('poa');
+            const tbody = document.getElementById('poa-table-body');
+            if(!tbody) return;
+            const emptyRow = document.getElementById('poa-empty');
+            if(emptyRow) emptyRow.remove();
+
+            const rowId = Date.now();
+            const tempRow = document.createElement('tr');
+            tempRow.id = `poa-row-${rowId}`;
+            tempRow.className = "text-[11px] border-b border-slate-200";
+            tempRow.innerHTML = `<td class="p-3 border-r font-bold text-amber-600">${risk.issue}</td><td colspan="7" class="p-6 text-center text-slate-500 animate-pulse font-medium">AI sedang menganalisis strategi penanganan terbaik...</td>`;
+            tbody.prepend(tempRow);
+
+            const prompt = `Analisis risiko: "${risk.issue}" (Kat: ${risk.cat}). Berikan strategi penanganan medis yang spesifik. 
+                           Tentukan Opsi (Reduce/Avoid/Transfer/Accept).
+                           Format JSON: {"strategy_option": "Reduce/Avoid/Transfer/Accept", "goal": "target terukur", "strategy": "- langkah 1\\n- langkah 2", "pic": "Jabatan", "timeline": "Durasi", "resources": "kebutuhan"}`;
+            
+            try {
+                const response = await fetchWithRetry(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }], generationConfig: { responseMimeType: "application/json" }})
+                });
+                const data = await response.json();
+                const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
+                if(!text) throw new Error("No data");
+                const poa = JSON.parse(cleanJSON(text));
+                
+                tempRow.innerHTML = `
+                    <td class="p-3 border-r border-slate-300 font-bold bg-slate-50 text-slate-700">${risk.issue}</td>
+                    <td class="p-3 border-r border-slate-300">
+                        <select class="w-full bg-transparent border-none text-[10px] font-bold text-amber-700 outline-none cursor-pointer">
+                            <option value="Reduce" ${poa.strategy_option==='Reduce'?'selected':''}>Reduce (Mitigasi)</option>
+                            <option value="Avoid" ${poa.strategy_option==='Avoid'?'selected':''}>Avoid (Hindari)</option>
+                            <option value="Transfer" ${poa.strategy_option==='Transfer'?'selected':''}>Transfer (Alihkan)</option>
+                            <option value="Accept" ${poa.strategy_option==='Accept'?'selected':''}>Accept (Terima)</option>
+                        </select>
+                    </td>
+                    <td class="p-3 border-r border-slate-300 contenteditable focus:bg-amber-50 outline-none whitespace-pre-wrap leading-relaxed" contenteditable="true">${poa.strategy}</td>
+                    <td class="p-3 border-r border-slate-300 contenteditable focus:bg-amber-50 outline-none" contenteditable="true">${poa.goal}</td>
+                    <td class="p-3 border-r border-slate-300 contenteditable focus:bg-amber-50 outline-none" contenteditable="true">${poa.pic}</td>
+                    <td class="p-3 border-r border-slate-300 contenteditable focus:bg-amber-50 outline-none" contenteditable="true">${poa.timeline}</td>
+                    <td class="p-3 border-r border-slate-300 contenteditable focus:bg-amber-50 outline-none" contenteditable="true">${poa.resources}</td>
+                    <td class="p-3 text-center no-print space-y-2">
+                        <button onclick="generateAudit(this)" class="bg-teal-600 text-white w-full py-1.5 rounded text-[9px] font-bold shadow hover:bg-teal-700 transition-all uppercase tracking-tighter">📋 Buat Audit</button>
+                        <button onclick="document.getElementById('poa-row-${rowId}').remove()" class="text-rose-500 font-bold w-full hover:underline text-[9px] uppercase tracking-tighter">Hapus</button>
+                    </td>
+                `;
+            } catch (e) {
+                tempRow.innerHTML = `<td class="p-3 border border-slate-300 font-bold">${risk.issue}</td><td colspan="7" class="p-3 text-red-500 font-bold text-center">Gagal memuat saran AI. Silakan isi manual pada baris ini.</td>`;
+            }
+        }
+
+        // ========================== FUNGSI AUDIT & EVALUASI ==========================
+        async function generateAudit(btnElement) {
+            const row = btnElement.closest('tr');
+            const cells = row.querySelectorAll('td');
+            const issue = cells[0].innerText;
+            const strategy = cells[2].innerText;
+            
+            const escapedIssue = escapeJS(issue);
+            const escapedStrategy = escapeJS(strategy);
+
+            const facUnitText = document.getElementById('facility-unit-text').value;
+            const facUnitSelect = document.getElementById('facility-unit-select').value;
+            const facType = document.getElementById('facility-type').value;
+            const finalUnit = facType === 'Puskesmas' ? facUnitSelect : facUnitText;
+
+            switchTab('audit');
+            const container = document.getElementById('audit-list-container');
+            const emptyMsg = document.getElementById('audit-empty');
+            if(emptyMsg) emptyMsg.remove();
+
+            const auditId = Date.now();
+            const card = document.createElement('div');
+            card.className = "audit-card bg-white p-6 rounded-xl shadow-sm border border-slate-200";
+            card.id = `audit-card-${auditId}`;
+            card.innerHTML = `<div class="flex items-center gap-3"><div class="dot-flashing"></div><p class="text-sm font-bold text-teal-700 uppercase tracking-tighter">AI sedang menyusun instrumen observasi...</p></div>`;
+            container.prepend(card);
+
+            const prompt = `Buat 5 pertanyaan checklist audit observasi lapangan (Ya/Tidak) yang praktis untuk IPCN guna mengawasi pelaksanaan strategi berikut:
+                           Risiko Utama: "${issue}"
+                           Strategi Penanganan: "${strategy}"
+                           Pertanyaan berupa observasi mata/dokumen.
+                           Format JSON: [{"q": "Pertanyaan audit 1..."}, {"q": "Pertanyaan audit 2..."}]`;
+
+            try {
+                const response = await fetchWithRetry(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }], generationConfig: { responseMimeType: "application/json" }})
+                });
+                const data = await response.json();
+                const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
+                if(!text) throw new Error("No data");
+                const items = JSON.parse(cleanJSON(text));
+
+                let html = `
+                    <div class="flex justify-between items-start border-b border-teal-100 pb-4 mb-4">
+                        <div class="pr-4 flex-1">
+                            <span class="bg-teal-100 text-teal-800 text-[10px] font-bold px-2 py-0.5 rounded uppercase tracking-widest mb-2 inline-block">Instrumen Pengawasan</span>
+                            <h3 class="font-bold text-lg text-slate-800 leading-tight">${issue}</h3>
+                            <p class="text-[11px] text-slate-500 mt-2 p-2 bg-slate-50 rounded border border-slate-100"><span class="font-bold text-slate-700">Strategi Diuji:</span> ${strategy.substring(0, 150)}...</p>
+                        </div>
+                        <div class="flex flex-col gap-2 min-w-[120px] no-print">
+                            <button onclick="document.getElementById('audit-card-${auditId}').remove()" class="bg-white border border-rose-200 text-rose-500 hover:bg-rose-50 px-3 py-1.5 rounded text-[10px] font-bold transition-all uppercase tracking-tighter text-center">Hapus Audit</button>
+                        </div>
+                    </div>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6 text-xs text-slate-800">
+                        <div class="flex items-end gap-2"><span class="font-bold whitespace-nowrap">Unit / Area:</span> <input type="text" value="${finalUnit}" class="flex-1 border-b border-dashed border-slate-400 focus:border-solid bg-transparent outline-none pb-1 font-bold"></div>
+                        <div class="flex items-end gap-2"><span class="font-bold whitespace-nowrap">Tgl Audit:</span> <input type="date" class="flex-1 border-b border-dashed border-slate-400 focus:border-solid bg-transparent outline-none pb-1 font-bold"></div>
+                        <div class="flex items-end gap-2"><span class="font-bold whitespace-nowrap">Auditor:</span> <input type="text" class="flex-1 border-b border-dashed border-slate-400 focus:border-solid bg-transparent outline-none pb-1 font-bold" placeholder="Ketik nama auditor..."></div>
+                    </div>
+
+                    <table class="w-full text-xs text-left border-collapse border border-slate-300 mb-4 print-table">
+                        <thead class="bg-teal-50 text-teal-800 text-[10px] uppercase">
+                            <tr>
+                                <th class="p-2 border border-slate-300 w-10 text-center">No</th>
+                                <th class="p-2 border border-slate-300">Elemen Penilaian (Observasi/Telusur)</th>
+                                <th class="p-2 border border-slate-300 w-16 text-center">Ya (1)</th>
+                                <th class="p-2 border border-slate-300 w-16 text-center">Tdk (0)</th>
+                                <th class="p-2 border border-slate-300 w-48">Keterangan / Temuan</th>
+                            </tr>
+                        </thead>
+                        <tbody class="bg-white">
+                `;
+                
+                items.forEach((item, idx) => {
+                    html += `
+                        <tr class="audit-row text-[11px] hover:bg-slate-50 transition-colors">
+                            <td class="p-2 border border-slate-300 text-center font-bold text-slate-500">${idx+1}</td>
+                            <td class="p-2 border border-slate-300 font-medium text-slate-800 q-text leading-tight">${item.q}</td>
+                            <td class="p-2 border border-slate-300 text-center align-middle">
+                                <input type="radio" name="audit_${auditId}_q${idx}" value="ya" class="ans-ya h-4 w-4 text-teal-600 cursor-pointer outline-none print:w-3 print:h-3">
+                            </td>
+                            <td class="p-2 border border-slate-300 text-center align-middle">
+                                <input type="radio" name="audit_${auditId}_q${idx}" value="tidak" class="ans-tidak h-4 w-4 text-rose-500 cursor-pointer outline-none print:w-3 print:h-3">
+                            </td>
+                            <td class="p-2 border border-slate-300 contenteditable focus:bg-teal-50 outline-none q-note leading-tight text-slate-800" contenteditable="true" data-placeholder="Ketik temuan..."></td>
+                        </tr>
+                    `;
+                });
+                
+                html += `</tbody></table>
+                    <div class="mt-4 pt-4 border-t border-teal-100 flex flex-col gap-3">
+                        <p class="text-[10px] text-slate-500 italic no-print mb-1">Isi formulir observasi (pilih Ya/Tidak) dan tambahkan keterangan jika perlu, kemudian klik tombol di bawah untuk meminta AI merumuskan kesimpulan evaluasi.</p>
+                        <button onclick="generateAuditAnalysis(${auditId}, '${escapedIssue}', '${escapedStrategy}')" class="bg-amber-100 text-amber-800 hover:bg-amber-200 border border-amber-200 px-4 py-2 rounded text-[11px] font-bold transition-all self-start flex items-center gap-2 no-print shadow-sm uppercase tracking-tighter active:scale-95">
+                            ✨ Generate Analisis Temuan (AI)
+                        </button>
+                        <div id="analysis-result-${auditId}" class="hidden bg-white p-5 mt-2 text-xs text-slate-800 leading-relaxed border border-slate-200"></div>
+                    </div>
+                `;
+                card.innerHTML = html;
+
+            } catch (e) {
+                card.innerHTML = `<h3 class="font-bold text-slate-800">${issue}</h3><p class="text-sm text-red-500 mt-2">Gagal menghasilkan instrumen. Coba lagi nanti.</p><button onclick="this.parentElement.remove()" class="text-xs font-bold text-slate-500 underline mt-2">Hapus Kartu</button>`;
+            }
+        }
+
+        async function generateAuditAnalysis(auditId, issue, strategy) {
+            const resultDiv = document.getElementById(`analysis-result-${auditId}`);
+            const card = document.getElementById(`audit-card-${auditId}`);
+            if(!resultDiv || !card) return;
+
+            const rows = card.querySelectorAll('.audit-row');
+            let findings = [];
+            let allFilled = true;
+
+            rows.forEach(row => {
+                const q = row.querySelector('.q-text').innerText;
+                const isYa = row.querySelector('.ans-ya').checked;
+                const isTidak = row.querySelector('.ans-tidak').checked;
+                const note = row.querySelector('.q-note').innerText.trim();
+                
+                let ans = "Belum Diisi";
+                if(isYa) ans = "Ya (Patuh)";
+                if(isTidak) ans = "Tidak (Melanggar)";
+                if(!isYa && !isTidak) allFilled = false;
+
+                findings.push(`- Pertanyaan: ${q}\n  Jawaban Observasi: ${ans}\n  Temuan/Catatan Auditor: ${note || 'Tidak ada catatan'}`);
+            });
+
+            if(!allFilled) {
+                alert("Mohon pastikan seluruh pertanyaan observasi (Ya/Tidak) sudah dipilih.");
+                return;
+            }
+
+            resultDiv.innerHTML = `<div class="flex items-center gap-3 text-amber-700 animate-pulse"><div class="dot-flashing"></div> <span class="text-[10px] font-bold uppercase tracking-widest">Menyusun evaluasi...</span></div>`;
+            resultDiv.classList.remove('hidden');
+
+            const prompt = `Lakukan analisis audit lapangan untuk evaluasi PPI:
+Risiko Utama: "${issue}"
+Strategi Diterapkan: "${strategy}"
+
+Data Observasi:
+${findings.join('\n\n')}
+
+ATURAN KETAT:
+1. DILARANG KERAS menggunakan kalimat pembuka basa-basi seperti "Berikut adalah hasil analisis..." atau kalimat penutup.
+2. Langsung berikan Poin 1 (Kesimpulan) dan Poin 2 (Rekomendasi Tindak Lanjut).
+3. Gunakan bahasa Indonesia formal dan format Markdown (bold, list). Jangan pakai blok kode JSON/MD.`;
+
+            try {
+                const response = await fetchWithRetry(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }], generationConfig: { responseMimeType: "text/plain" }})
+                });
+                const data = await response.json();
+                const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
+                if(!text) throw new Error("No data");
+                
+                resultDiv.innerHTML = `
+                    <div class="border-b border-black pb-2 mb-4">
+                        <h4 class="font-bold text-black text-sm uppercase tracking-tighter">Analisis & Rekomendasi Evaluasi</h4>
+                    </div>
+                    <div class="prose prose-sm max-w-none text-black leading-relaxed font-serif">
+                        ${marked.parse(text)}
+                    </div>
+                `;
+            } catch (e) {
+                resultDiv.innerHTML = `<span class="text-rose-500 font-bold">Gagal memuat analisis AI. Silakan coba lagi.</span>`;
+            }
+        }
+
+        // ========================== FUNGSI ICRA KONSTRUKSI ==========================
+        const matrix = {'R':{'A':'I','B':'II','C':'II','D':'III'},'S':{'A':'I','B':'II','C':'III','D':'IV'},'T':{'A':'I','B':'II','C':'III','D':'IV'},'ST':{'A':'II','B':'III','C':'IV','D':'IV'}};
+        
+        const typeDescData = {};
+        const riskDescData = {};
+
+        const baseIntv = {
+            'i1': "Pekerjaan dilaksanakan dengan metode minim debu (tidak memicu debu berterbangan).",
+            'i2': "Segera pasang kembali plafon/atap sesegera mungkin jika ada yang digeser.",
+            'i3': "Sediakan sarana pencegah debu aktif (misal: semprotan air sebelum membongkar dinding).",
+            'i4': "Pintu/jendela yang tidak digunakan harus dilakban atau ditutup rapat.",
+            'i5': "Sistem AC Sentral / HVAC di area proyek dimatikan sementara.",
+            'i6': "Pembersihan area kerja dengan pel basah atau vakum HEPA setelah pekerjaan selesai.",
+            'i7': "Wajib memasang barier debu solid (terpal tebal/partisi gipsum) dari lantai ke plafon sebelum pekerjaan dimulai.",
+            'i8': "Ciptakan tekanan udara negatif di dalam area kerja (gunakan exhaust fan ke arah luar gedung).",
+            'i9': "Limbah puing bangunan harus diangkut menggunakan wadah atau troli yang tertutup rapat.",
+            'i10': "Isolasi total sistem saluran udara (AC/Ventilasi) agar debu dipastikan tidak masuk ke ruang pasien.",
+            'i11': "Membangun Ante-room (ruang antara) untuk area ganti dan pembersihan pekerja sebelum keluar dari area proyek.",
+            'i12': "Alas kaki pekerja wajib dibersihkan atau menggunakan keset lengket (sticky mat) di pintu keluar proyek."
+        };
+
+        const classIntvMap = {
+            'I': ['i1', 'i2', 'i6'],
+            'II': ['i1', 'i2', 'i3', 'i4', 'i5', 'i6'],
+            'III': ['i1', 'i2', 'i3', 'i4', 'i5', 'i6', 'i7', 'i8', 'i9'],
+            'IV': ['i1', 'i2', 'i3', 'i4', 'i5', 'i6', 'i7', 'i8', 'i9', 'i10', 'i11', 'i12']
+        };
+
+        function initConstruction() {
+            const dateInput = document.getElementById('pcra-assessment-date');
+            if(dateInput) dateInput.valueAsDate = new Date();
+
+            const types = [
+                {id:'A', title:'TIPE A: Inspeksi, aktivitas non-invasif.', desc:'Pengecatan, pembersihan skala kecil, perbaikan tanpa bongkar.'},
+                {id:'B', title:'TIPE B: Skala kecil, durasi pendek.', desc:'Tingkat debu minimal. (Buka plafon, potong dinding).'},
+                {id:'C', title:'TIPE C: Pembongkaran debu tingkat sedang-tinggi.', desc:'Bongkar lantai/dinding, renovasi ruangan penuh.'},
+                {id:'D', title:'TIPE D: Konstruksi mayor / Proyek besar.', desc:'Bangun gedung baru, bongkar total gedung lama.'}
+            ];
+            const areas = [
+                {id:'R', title:'RISIKO RENDAH', desc:'Area Perkantoran, Koridor Umum, Ruang Rapat.'},
+                {id:'S', title:'RISIKO SEDANG', desc:'Ruang Tunggu Pasien, Poliklinik rawat jalan, Instalasi Gizi/Dapur.'},
+                {id:'T', title:'RISIKO TINGGI', desc:'IGD, Ruang Rawat Inap, Laboratorium, Farmasi, Ruang Bersalin (VK).'},
+                {id:'ST', title:'RISIKO SANGAT TINGGI', desc:'Kamar Operasi (OK), ICU/NICU/PICU, Ruang Isolasi, CSSD.'}
+            ];
+            
+            const tCont = document.getElementById('project-types');
+            const rCont = document.getElementById('risk-groups');
+            if(!tCont || !rCont) return;
+
+            tCont.innerHTML = '';
+            rCont.innerHTML = '';
+
+            types.forEach(t => {
+                typeDescData[t.id] = `${t.title} ${t.desc}`;
+                tCont.innerHTML += `
+                    <label class="radio-card cursor-pointer block">
+                        <input type="radio" name="proj_type" value="${t.id}" class="hidden" onchange="calcMat('${t.id}', 't')">
+                        <div class="border border-slate-200 rounded-xl p-4 hover:bg-slate-50 transition-all flex items-start group shadow-sm bg-white">
+                            <div class="mt-0.5 mr-3 radio-icon text-slate-300 group-hover:text-amber-500 font-bold text-lg">🔘</div>
+                            <div>
+                                <h3 class="font-bold text-slate-800 text-sm">${t.title}</h3>
+                                <p class="text-[10px] text-slate-500 mt-1 leading-tight">${t.desc}</p>
+                            </div>
+                        </div>
+                    </label>`;
+            });
+
+            areas.forEach(r => {
+                riskDescData[r.id] = `${r.title}: ${r.desc}`;
+                rCont.innerHTML += `
+                    <label class="radio-card cursor-pointer block">
+                        <input type="radio" name="risk_group" value="${r.id}" class="hidden" onchange="calcMat('${r.id}', 'r')">
+                        <div class="border border-slate-200 rounded-xl p-4 hover:bg-slate-50 transition-all flex items-start group shadow-sm bg-white">
+                            <div class="mt-0.5 mr-3 radio-icon text-slate-300 group-hover:text-sky-500 font-bold text-lg">🔘</div>
+                            <div>
+                                <h3 class="font-bold text-slate-800 text-sm">${r.title}</h3>
+                                <p class="text-[10px] text-slate-500 mt-1 leading-tight">${r.desc}</p>
+                            </div>
+                        </div>
+                    </label>`;
+            });
+        }
+
+        function calcMat(v,c){ 
+            if(c==='t') {
+                sT=v;
+                document.getElementById('custom-type-container').classList.remove('hidden');
+                document.getElementById('custom-type-text').value = typeDescData[v];
+            } else {
+                sR=v; 
+                document.getElementById('custom-risk-container').classList.remove('hidden');
+                document.getElementById('custom-risk-text').value = riskDescData[v];
+            }
+
+            if(sT&&sR){ 
+                const res = matrix[sR][sT]; 
+                const el = document.getElementById('class-result'); 
+                const desc = document.getElementById('class-desc');
+                
+                el.innerText = `KELAS ${res}`; 
+                desc.innerText=`Proyek ${sT} di Area ${sR} mewajibkan Intervensi Kewaspadaan Kelas ${res}`; 
+                el.className=`text-7xl font-black mb-2 drop-shadow-lg uppercase ${res==='IV'?'text-red-500 animate-pulse':'text-amber-500'}`; 
+                
+                const conclusionCont = document.getElementById('conclusion-container');
+                conclusionCont.classList.remove('hidden');
+                document.getElementById('custom-conclusion-text').value = `Berdasarkan kegiatan ${typeDescData[sT].split(':')[0]} yang dilakukan pada Area ${riskDescData[sR].split(':')[0]}, maka pekerjaan ini diwajibkan mematuhi standar intervensi PPI untuk KELAS ${res}. Pihak pelaksana wajib menjalankan instruksi keselamatan sesuai form izin kerja ini.`;
+
+                renderCheck(res); 
+            } 
+        }
+
+        function renderCheck(c){ 
+            const list = document.getElementById('intervention-list'); 
+            const section = document.getElementById('interventions-section');
+            if(!list || !section) return;
+
+            list.innerHTML=''; 
+            const requiredIntv = classIntvMap[c] || [];
+
+            requiredIntv.forEach(key => {
+                const text = baseIntv[key];
+                list.innerHTML += `
+                    <div class="flex items-start space-x-3 p-4 bg-slate-50 border border-slate-200 rounded-xl shadow-sm transition-all hover:bg-white">
+                        <input type="checkbox" checked class="mt-1 h-5 w-5 text-sky-600 rounded border-slate-300 cursor-pointer flex-shrink-0"> 
+                        <span class="pcra-editable-intv text-[13px] font-medium leading-relaxed text-slate-700 outline-none w-full border-b border-dashed border-slate-300 focus:border-solid focus:border-sky-500 pb-1" contenteditable="true" data-placeholder="Ketik intervensi spesifik di sini...">${text}</span>
+                    </div>`;
+            }); 
+            
+            section.classList.remove('hidden'); 
+        }
+
+        // ========================== INIT LOAD ==========================
+        window.onload = function() {
+            initConstruction();
+            const progDateInput = document.getElementById('prog-assessment-date');
+            if(progDateInput) progDateInput.valueAsDate = new Date();
+        };
+    </script>
+</body>
+</html>
