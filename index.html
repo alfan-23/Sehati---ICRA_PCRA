@@ -417,8 +417,24 @@
     </main>
 
     <script>
-        // API Key Environment
-        const apiKey = ""; 
+        // --- INTEGRASI DASHBOARD SEHATI AI ---
+        let apiKey = new URLSearchParams(window.location.search).get('key') || "";
+        let aiModel = new URLSearchParams(window.location.search).get('model') || "gemini-2.5-flash";
+        let systemContext = "";
+
+        window.addEventListener('message', (event) => {
+            if (!event.data || !event.data.type) return;
+            if (event.data.type === 'UPDATE_CONFIG') {
+                apiKey = event.data.key;
+                if(event.data.model) aiModel = event.data.model;
+                if(event.data.contextReference) systemContext = event.data.contextReference;
+            }
+            if (event.data.type === 'STOP_RETRY') {
+                alert("Sistem AI Dihentikan Sementara: Semua Slot API Key gagal. Periksa limit/kuota di Dashboard.");
+            }
+        });
+        window.parent.postMessage({ type: 'REQUEST_CONFIG' }, '*');
+        // --------------------------------------
 
         // ========================== STATE & DATA PENYIMPANAN ==========================
         let programRisks = [];
@@ -857,10 +873,12 @@
                 unitOptionsText = `Pilihan "unit" WAJIB salah satu dari persis ini: "Manajemen / Tata Usaha", "Klaster 2 (Poli KIA / KB / Anak)", "Klaster 2 (Ruang Bersalin/PONED)", "Klaster 3 (Poli Umum / Lansia)", "Klaster 4 (Poli TB / DOTS)", "Klaster 4 (Poli Infeksi / Kusta)", "Lintas Klaster (UGD/Tindakan)", "Lintas Klaster (Rawat Inap)", "Lintas Klaster (Poli Gigi/Kesgilut)", "Lintas Klaster (Laboratorium)", "Lintas Klaster (Farmasi/Apotek)", "Lintas Klaster (Pendaftaran)", "Lintas Klaster (Sterilisasi/CSSD)", "Lintas Klaster (Laundry/Kesling)". `;
             }
 
-            const prompt = `Berikan 5 ide potensi risiko infeksi ICRA PPI ${cat === "STUCK" ? "lintas kategori" : "kategori " + cat}. Usulkan skor P, D, S (1-5). ${contextString ? 'PENTING: Sesuaikan ide dengan konteks ini -> ' + contextString : ''} ${unitOptionsText}Format JSON: [{"cat": "HAIs/Kesehatan Kerja/Kewaspadaan Isolasi/Lingkungan/Transmisi Penyakit", "unit": "Saran Unit/Ruangan", "issue": "deskripsi spesifik", "p": 3, "d": 4, "s": 2}]`;
+            let prompt = `Berikan 5 ide potensi risiko infeksi ICRA PPI ${cat === "STUCK" ? "lintas kategori" : "kategori " + cat}. Usulkan skor P, D, S (1-5). ${contextString ? 'PENTING: Sesuaikan ide dengan konteks ini -> ' + contextString : ''} ${unitOptionsText}Format JSON: [{"cat": "HAIs/Kesehatan Kerja/Kewaspadaan Isolasi/Lingkungan/Transmisi Penyakit", "unit": "Saran Unit/Ruangan", "issue": "deskripsi spesifik", "p": 3, "d": 4, "s": 2}]`;
             
+            if (systemContext) prompt = `REFERENSI ATURAN:\n${systemContext}\n\nTUGAS:\n${prompt}`;
+
             try {
-                const response = await fetchWithRetry(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`, {
+                const response = await fetchWithRetry(`https://generativelanguage.googleapis.com/v1beta/models/${aiModel}:generateContent?key=${apiKey}`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }], generationConfig: { responseMimeType: "application/json" }})
@@ -870,8 +888,10 @@
                 if(!text) throw new Error("No data");
                 const ideas = JSON.parse(cleanJSON(text));
                 renderIdeas(ideas);
+                window.parent.postMessage({ type: 'API_SUCCESS' }, '*');
             } catch (e) {
-                renderIdeas([{cat: "HAIs", unit: "Ruang Rawat", issue: "Kegagalan kepatuhan bundle infus harian", p:3, d:2, s:3}]);
+                window.parent.postMessage({ type: 'API_ERROR', code: e.message }, '*');
+                renderIdeas([{cat: "HAIs", unit: "Ruang Rawat", issue: "Kegagalan kepatuhan bundle infus harian (Atau AI Error/Sedang memutar kunci, coba lagi)", p:3, d:2, s:3}]);
             }
         }
 
@@ -984,12 +1004,14 @@
             tempRow.innerHTML = `<td class="p-3 border-r font-bold text-amber-600">${risk.issue}</td><td colspan="7" class="p-6 text-center text-slate-500 animate-pulse font-medium">AI sedang menganalisis strategi penanganan terbaik...</td>`;
             tbody.prepend(tempRow);
 
-            const prompt = `Analisis risiko: "${risk.issue}" (Kat: ${risk.cat}). Berikan strategi penanganan medis yang spesifik. 
+            let prompt = `Analisis risiko: "${risk.issue}" (Kat: ${risk.cat}). Berikan strategi penanganan medis yang spesifik. 
                            Tentukan Opsi (Reduce/Avoid/Transfer/Accept).
                            Format JSON: {"strategy_option": "Reduce/Avoid/Transfer/Accept", "goal": "target terukur", "strategy": "- langkah 1\\n- langkah 2", "pic": "Jabatan", "timeline": "Durasi", "resources": "kebutuhan"}`;
             
+            if (systemContext) prompt = `REFERENSI ATURAN:\n${systemContext}\n\nTUGAS:\n${prompt}`;
+
             try {
-                const response = await fetchWithRetry(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`, {
+                const response = await fetchWithRetry(`https://generativelanguage.googleapis.com/v1beta/models/${aiModel}:generateContent?key=${apiKey}`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }], generationConfig: { responseMimeType: "application/json" }})
@@ -1019,8 +1041,10 @@
                         <button onclick="document.getElementById('poa-row-${rowId}').remove()" class="text-rose-500 font-bold w-full hover:underline text-[9px] uppercase tracking-tighter">Hapus</button>
                     </td>
                 `;
+                window.parent.postMessage({ type: 'API_SUCCESS' }, '*');
             } catch (e) {
-                tempRow.innerHTML = `<td class="p-3 border border-slate-300 font-bold">${risk.issue}</td><td colspan="7" class="p-3 text-red-500 font-bold text-center">Gagal memuat saran AI. Silakan isi manual pada baris ini.</td>`;
+                window.parent.postMessage({ type: 'API_ERROR', code: e.message }, '*');
+                tempRow.innerHTML = `<td class="p-3 border border-slate-300 font-bold">${risk.issue}</td><td colspan="7" class="p-3 text-red-500 font-bold text-center">Gagal memuat saran AI. Sedang memutar API Key, silakan coba lagi nanti.</td>`;
             }
         }
 
@@ -1051,14 +1075,16 @@
             card.innerHTML = `<div class="flex items-center gap-3"><div class="dot-flashing"></div><p class="text-sm font-bold text-teal-700 uppercase tracking-tighter">AI sedang menyusun instrumen observasi...</p></div>`;
             container.prepend(card);
 
-            const prompt = `Buat 5 pertanyaan checklist audit observasi lapangan (Ya/Tidak) yang praktis untuk IPCN guna mengawasi pelaksanaan strategi berikut:
+            let prompt = `Buat 5 pertanyaan checklist audit observasi lapangan (Ya/Tidak) yang praktis untuk IPCN guna mengawasi pelaksanaan strategi berikut:
                            Risiko Utama: "${issue}"
                            Strategi Penanganan: "${strategy}"
                            Pertanyaan berupa observasi mata/dokumen.
                            Format JSON: [{"q": "Pertanyaan audit 1..."}, {"q": "Pertanyaan audit 2..."}]`;
 
+            if (systemContext) prompt = `REFERENSI ATURAN:\n${systemContext}\n\nTUGAS:\n${prompt}`;
+
             try {
-                const response = await fetchWithRetry(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`, {
+                const response = await fetchWithRetry(`https://generativelanguage.googleapis.com/v1beta/models/${aiModel}:generateContent?key=${apiKey}`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }], generationConfig: { responseMimeType: "application/json" }})
@@ -1125,9 +1151,10 @@
                     </div>
                 `;
                 card.innerHTML = html;
-
+                window.parent.postMessage({ type: 'API_SUCCESS' }, '*');
             } catch (e) {
-                card.innerHTML = `<h3 class="font-bold text-slate-800">${issue}</h3><p class="text-sm text-red-500 mt-2">Gagal menghasilkan instrumen. Coba lagi nanti.</p><button onclick="this.parentElement.remove()" class="text-xs font-bold text-slate-500 underline mt-2">Hapus Kartu</button>`;
+                window.parent.postMessage({ type: 'API_ERROR', code: e.message }, '*');
+                card.innerHTML = `<h3 class="font-bold text-slate-800">${issue}</h3><p class="text-sm text-red-500 mt-2">Gagal menghasilkan instrumen. Sedang memutar API Key, coba lagi nanti.</p><button onclick="this.parentElement.remove()" class="text-xs font-bold text-slate-500 underline mt-2">Hapus Kartu</button>`;
             }
         }
 
@@ -1162,7 +1189,7 @@
             resultDiv.innerHTML = `<div class="flex items-center gap-3 text-amber-700 animate-pulse"><div class="dot-flashing"></div> <span class="text-[10px] font-bold uppercase tracking-widest">Menyusun evaluasi...</span></div>`;
             resultDiv.classList.remove('hidden');
 
-            const prompt = `Lakukan analisis audit lapangan untuk evaluasi PPI:
+            let prompt = `Lakukan analisis audit lapangan untuk evaluasi PPI:
 Risiko Utama: "${issue}"
 Strategi Diterapkan: "${strategy}"
 
@@ -1174,8 +1201,10 @@ ATURAN KETAT:
 2. Langsung berikan Poin 1 (Kesimpulan) dan Poin 2 (Rekomendasi Tindak Lanjut).
 3. Gunakan bahasa Indonesia formal dan format Markdown (bold, list). Jangan pakai blok kode JSON/MD.`;
 
+            if (systemContext) prompt = `REFERENSI ATURAN:\n${systemContext}\n\nTUGAS:\n${prompt}`;
+
             try {
-                const response = await fetchWithRetry(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`, {
+                const response = await fetchWithRetry(`https://generativelanguage.googleapis.com/v1beta/models/${aiModel}:generateContent?key=${apiKey}`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }], generationConfig: { responseMimeType: "text/plain" }})
@@ -1192,8 +1221,10 @@ ATURAN KETAT:
                         ${marked.parse(text)}
                     </div>
                 `;
+                window.parent.postMessage({ type: 'API_SUCCESS' }, '*');
             } catch (e) {
-                resultDiv.innerHTML = `<span class="text-rose-500 font-bold">Gagal memuat analisis AI. Silakan coba lagi.</span>`;
+                window.parent.postMessage({ type: 'API_ERROR', code: e.message }, '*');
+                resultDiv.innerHTML = `<span class="text-rose-500 font-bold">Gagal memuat analisis AI. Sedang memutar API Key, silakan coba lagi.</span>`;
             }
         }
 
