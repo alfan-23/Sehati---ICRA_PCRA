@@ -68,10 +68,20 @@
                 <button onclick="switchTab('konstruksi')" id="btn-tab-konstruksi" class="py-2 px-3 focus:outline-none transition-all tab-inactive text-sm font-semibold rounded hover:bg-slate-50">4. ICRA Bangunan</button>
             </div>
             
-            <button onclick="downloadMasterPDF()" id="btn-master-print" class="w-full xl:w-auto bg-amber-500 text-white px-6 py-3 rounded-lg font-extrabold shadow-lg hover:bg-amber-600 hover:scale-105 transition-all uppercase tracking-tight text-sm flex items-center justify-center gap-2 border border-amber-600">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
-                Simpan Buku Laporan Lengkap
-            </button>
+            <div class="flex flex-col xl:flex-row gap-2 w-full xl:w-auto mt-4 xl:mt-0">
+                <input type="file" id="draft-file" class="hidden" accept=".txt" onchange="loadDraftTXT(event)">
+                <button onclick="document.getElementById('draft-file').click()" class="bg-slate-100 hover:bg-slate-200 text-slate-700 px-4 py-3 rounded-lg font-bold shadow-sm transition-all flex items-center justify-center gap-2 border border-slate-300 text-xs uppercase">
+                    📂 Muat Draft
+                </button>
+                <button onclick="saveDraftTXT()" class="bg-indigo-50 hover:bg-indigo-100 text-indigo-700 px-4 py-3 rounded-lg font-bold shadow-sm transition-all flex items-center justify-center gap-2 border border-indigo-200 text-xs uppercase">
+                    💾 Simpan Draft
+                </button>
+                
+                <button onclick="downloadMasterPDF()" id="btn-master-print" class="w-full xl:w-auto bg-amber-500 text-white px-6 py-3 rounded-lg font-extrabold shadow-lg hover:bg-amber-600 hover:scale-105 transition-all uppercase tracking-tight text-sm flex items-center justify-center gap-2 border border-amber-600">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+                    Simpan Buku Laporan Lengkap
+                </button>
+            </div>
         </div>
     </nav>
 
@@ -416,6 +426,8 @@
         </section>
     </main>
 
+    <div id="toast-container" class="fixed top-4 right-4 z-50 flex flex-col gap-2 pointer-events-none"></div>
+
     <script>
         // --- INTEGRASI DASHBOARD SEHATI AI ---
         let apiKey = new URLSearchParams(window.location.search).get('key') || "";
@@ -430,11 +442,30 @@
                 if(event.data.contextReference) systemContext = event.data.contextReference;
             }
             if (event.data.type === 'STOP_RETRY') {
-                alert("Sistem AI Dihentikan Sementara: Semua Slot API Key gagal. Periksa limit/kuota di Dashboard.");
+                showToast("Sistem AI Dihentikan Sementara: Semua Slot API Key gagal. Periksa limit/kuota di Dashboard.", true);
             }
         });
         window.parent.postMessage({ type: 'REQUEST_CONFIG' }, '*');
         // --------------------------------------
+
+        // Fungsi pengganti Alert untuk UI yang lebih baik
+        function showToast(message, isError = true) {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            toast.className = `px-4 py-3 rounded-lg shadow-lg text-sm font-bold text-white ${isError ? 'bg-rose-500' : 'bg-teal-500'} transition-all duration-300 transform translate-x-full`;
+            toast.innerText = message;
+            
+            container.appendChild(toast);
+            
+            requestAnimationFrame(() => {
+                toast.classList.remove('translate-x-full');
+            });
+
+            setTimeout(() => {
+                toast.classList.add('opacity-0');
+                setTimeout(() => toast.remove(), 300);
+            }, 3500);
+        }
 
         // ========================== STATE & DATA PENYIMPANAN ==========================
         let programRisks = [];
@@ -458,7 +489,6 @@
             window.scrollTo(0,0);
         }
 
-        // Fungsi Escape
         function escapeJS(str) {
             if (!str) return '';
             return String(str)
@@ -516,7 +546,7 @@
                 btn.disabled = false;
             }).catch(err => {
                 console.error(err);
-                alert("Terjadi kesalahan saat menyusun PDF.");
+                showToast("Terjadi kesalahan saat menyusun PDF.");
                 btn.innerHTML = originalText;
                 btn.disabled = false;
             });
@@ -533,7 +563,6 @@
                 </div>
             `;
 
-            // BAGIAN 1: PROFIL RISIKO
             html += `<h3 style="font-size: 12pt; font-weight: bold; margin-bottom: 10px;">1. MATRIKS PROFIL RISIKO (RESIDUAL RISK)</h3>`;
             html += `<table style="width: 100%; border-collapse: collapse; font-size: 10pt; margin-bottom: 30px;" border="1">
                         <tr style="background-color: #f0f0f0;">
@@ -563,7 +592,6 @@
             }
             html += `</table>`;
 
-            // BAGIAN 2: POA
             html += `<div class="html2pdf__page-break"></div>`; 
             html += `<h3 style="font-size: 12pt; font-weight: bold; margin-bottom: 10px; padding-top: 10px;">2. PLAN OF ACTION (RENCANA PENANGANAN)</h3>`;
             html += `<table style="width: 100%; border-collapse: collapse; font-size: 10pt; margin-bottom: 30px;" border="1">
@@ -602,7 +630,6 @@
             }
             html += `</table>`;
 
-            // BAGIAN 3: AUDIT
             const auditCards = document.querySelectorAll('.audit-card');
             if (auditCards.length > 0) {
                 html += `<div class="html2pdf__page-break"></div>`;
@@ -659,7 +686,6 @@
                     });
                     html += `</table>`;
 
-                    // Sertakan Analisis AI jika ada
                     const analysisDiv = card.querySelector('[id^="analysis-result-"]');
                     if (analysisDiv && !analysisDiv.classList.contains('hidden') && !analysisDiv.innerHTML.includes('dot-flashing')) {
                         const proseDiv = analysisDiv.querySelector('.prose');
@@ -706,7 +732,7 @@
                 btn.disabled = false;
             }).catch(err => {
                 console.error(err);
-                alert("Terjadi kesalahan saat menyusun PDF PCRA.");
+                showToast("Terjadi kesalahan saat menyusun PDF PCRA.");
                 btn.innerHTML = originalText;
                 btn.disabled = false;
             });
@@ -718,7 +744,6 @@
             const location = document.getElementById('pcra-location').value || "........................................................";
             const contractor = document.getElementById('pcra-contractor').value || "........................................................";
             
-            // Ambil Narasi Custom dari Layar
             const editedType = document.getElementById('custom-type-text').value || "(Tipe proyek belum dipilih)";
             const editedRisk = document.getElementById('custom-risk-text').value || "(Area risiko belum dipilih)";
             const editedConclusion = document.getElementById('custom-conclusion-text').value || "";
@@ -942,8 +967,8 @@
         function addProgramRisk() {
             const issue = document.getElementById('prog-issue').value;
             const cat = document.getElementById('prog-cat').value;
-            if (cat === "STUCK") return alert("Silakan tentukan kategori risiko terlebih dahulu.");
-            if (!issue.trim()) return alert("Tuliskan deskripsi masalah risiko.");
+            if (cat === "STUCK") return showToast("Silakan tentukan kategori risiko terlebih dahulu.");
+            if (!issue.trim()) return showToast("Tuliskan deskripsi masalah risiko.");
             const p = parseInt(document.getElementById('prog-p').value);
             const d = parseInt(document.getElementById('prog-d').value);
             const s = parseInt(document.getElementById('prog-s').value);
@@ -1182,7 +1207,7 @@
             });
 
             if(!allFilled) {
-                alert("Mohon pastikan seluruh pertanyaan observasi (Ya/Tidak) sudah dipilih.");
+                showToast("Mohon pastikan seluruh pertanyaan observasi (Ya/Tidak) sudah dipilih.");
                 return;
             }
 
@@ -1226,6 +1251,126 @@ ATURAN KETAT:
                 window.parent.postMessage({ type: 'API_ERROR', code: e.message }, '*');
                 resultDiv.innerHTML = `<span class="text-rose-500 font-bold">Gagal memuat analisis AI. Sedang memutar API Key, silakan coba lagi.</span>`;
             }
+        }
+
+        // ========================== FUNGSI SIMPAN/MUAT DRAFT TXT ==========================
+        function syncDOMState() {
+            document.querySelectorAll('select').forEach(el => {
+                const val = el.value;
+                el.querySelectorAll('option').forEach(opt => {
+                    if (opt.value === val) opt.setAttribute('selected', 'selected');
+                    else opt.removeAttribute('selected');
+                });
+            });
+            document.querySelectorAll('input[type="radio"], input[type="checkbox"]').forEach(el => {
+                if (el.checked) el.setAttribute('checked', 'checked');
+                else el.removeAttribute('checked');
+            });
+            document.querySelectorAll('input[type="text"], input[type="date"]').forEach(el => {
+                el.setAttribute('value', el.value);
+            });
+            document.querySelectorAll('textarea').forEach(el => {
+                el.textContent = el.value;
+            });
+        }
+
+        function saveDraftTXT() {
+            syncDOMState();
+            const draft = {
+                facilityType: document.getElementById('facility-type').value,
+                facilityName: document.getElementById('facility-name').value,
+                facilityUnitText: document.getElementById('facility-unit-text').value,
+                facilityUnitSelect: document.getElementById('facility-unit-select').value,
+                assessmentDate: document.getElementById('prog-assessment-date').value,
+                programRisks: programRisks,
+                poaHTML: document.getElementById('poa-table-body').innerHTML,
+                auditHTML: document.getElementById('audit-list-container').innerHTML,
+                pcraName: document.getElementById('pcra-project-name').value,
+                pcraLocation: document.getElementById('pcra-location').value,
+                pcraContractor: document.getElementById('pcra-contractor').value,
+                pcraDate: document.getElementById('pcra-assessment-date').value,
+                sT: sT,
+                sR: sR,
+                customType: document.getElementById('custom-type-text').value,
+                customRisk: document.getElementById('custom-risk-text').value,
+                customConclusion: document.getElementById('custom-conclusion-text').value,
+                interventionHTML: document.getElementById('intervention-list').innerHTML
+            };
+            const dataStr = "data:text/plain;charset=utf-8," + encodeURIComponent(JSON.stringify(draft, null, 2));
+            const downloadAnchorNode = document.createElement('a');
+            downloadAnchorNode.setAttribute("href", dataStr);
+            downloadAnchorNode.setAttribute("download", `Draft_ICRA_PPI_${new Date().getTime()}.txt`);
+            document.body.appendChild(downloadAnchorNode); 
+            downloadAnchorNode.click();
+            downloadAnchorNode.remove();
+            showToast("Draft berhasil disimpan ke file TXT!", false);
+        }
+
+        function loadDraftTXT(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const draft = JSON.parse(e.target.result);
+                    document.getElementById('facility-type').value = draft.facilityType || '';
+                    document.getElementById('facility-name').value = draft.facilityName || '';
+                    document.getElementById('facility-unit-text').value = draft.facilityUnitText || '';
+                    document.getElementById('facility-unit-select').value = draft.facilityUnitSelect || '';
+                    document.getElementById('prog-assessment-date').value = draft.assessmentDate || '';
+                    
+                    updateUnitInput();
+
+                    programRisks = draft.programRisks || [];
+                    renderProgramTable();
+
+                    if (draft.poaHTML) document.getElementById('poa-table-body').innerHTML = draft.poaHTML;
+                    if (draft.auditHTML) document.getElementById('audit-list-container').innerHTML = draft.auditHTML;
+                    
+                    document.getElementById('pcra-project-name').value = draft.pcraName || '';
+                    document.getElementById('pcra-location').value = draft.pcraLocation || '';
+                    document.getElementById('pcra-contractor').value = draft.pcraContractor || '';
+                    document.getElementById('pcra-assessment-date').value = draft.pcraDate || '';
+                    
+                    sT = draft.sT;
+                    sR = draft.sR;
+                    document.getElementById('custom-type-text').value = draft.customType || '';
+                    document.getElementById('custom-risk-text').value = draft.customRisk || '';
+                    document.getElementById('custom-conclusion-text').value = draft.customConclusion || '';
+                    
+                    if (draft.interventionHTML) {
+                        document.getElementById('intervention-list').innerHTML = draft.interventionHTML;
+                        document.getElementById('interventions-section').classList.remove('hidden');
+                    }
+                    
+                    if (sT) {
+                        const el = document.querySelector(`input[name="proj_type"][value="${sT}"]`);
+                        if(el) el.checked = true;
+                        document.getElementById('custom-type-container').classList.remove('hidden');
+                    }
+                    if (sR) {
+                        const el = document.querySelector(`input[name="risk_group"][value="${sR}"]`);
+                        if(el) el.checked = true;
+                        document.getElementById('custom-risk-container').classList.remove('hidden');
+                    }
+                    if(sT && sR) {
+                        const res = matrix[sR][sT]; 
+                        const el = document.getElementById('class-result'); 
+                        const desc = document.getElementById('class-desc');
+                        el.innerText = `KELAS ${res}`; 
+                        desc.innerText=`Proyek ${sT} di Area ${sR} mewajibkan Intervensi Kewaspadaan Kelas ${res}`; 
+                        el.className=`text-7xl font-black mb-2 drop-shadow-lg uppercase ${res==='IV'?'text-red-500 animate-pulse':'text-amber-500'}`;
+                        document.getElementById('conclusion-container').classList.remove('hidden');
+                    }
+
+                    showToast("Draft berhasil dimuat dan dikembalikan ke layar!", false);
+                } catch (err) {
+                    console.error(err);
+                    showToast("File draft tidak valid atau rusak.", true);
+                }
+            };
+            reader.readAsText(file);
+            event.target.value = '';
         }
 
         // ========================== FUNGSI ICRA KONSTRUKSI ==========================
